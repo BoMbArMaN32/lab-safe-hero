@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Safe Hero — เกมจำลองรับมือเหตุฉุกเฉินในห้องปฏิบัติการ 3 มิติ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--panel:#fff6e6;--panel2:#fdebcf;--line:#c58d5d;--line2:#a8744a;--txt:#4a2f1d;--mut:#8a6a52;--ok:#4c9a2a;--warn:#d98a1c;--crit:#d64545;--pri:#6fb3a3;--pri2:#4b8b7d}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#a9cf8a;font-family:'Mitr','Sarabun',system-ui,sans-serif;color:var(--txt);-webkit-user-select:none;user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;transition:filter .25s}
+#vignette{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(60,20,10,.35) 80%,rgba(40,10,5,.65) 100%)}
+#flash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0}
+.btn{font:inherit;font-weight:500;font-size:15px;border:2px solid var(--line);background:#fffaf0;color:var(--txt);padding:9px 14px;border-radius:14px;cursor:pointer;box-shadow:0 3px 0 var(--line2);transition:transform .06s,box-shadow .06s,background .15s}
+.btn:hover{background:#fff1d6}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line2)}
+.btn.pri{background:var(--pri);border-color:var(--pri2);color:#fff;box-shadow:0 3px 0 #3c7469}
+.btn.pri:hover{background:#7cc0b0}
+.btn.danger{background:#fde4e0;border-color:#d98b80}
+.btn.ghost{background:transparent;box-shadow:none}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.on{background:#d9f0e2;border-color:var(--ok)}
+.chip{display:inline-block;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;background:var(--panel2);border:1.5px solid var(--line);color:var(--txt)}
+.wood{background:var(--panel);border:3px solid var(--line);border-radius:18px;box-shadow:0 4px 0 var(--line2),0 10px 24px rgba(60,35,15,.25)}
+#hud{position:fixed;top:12px;left:12px;right:12px;display:none;justify-content:space-between;align-items:flex-start;pointer-events:none;gap:10px}
+#hud.show{display:flex}
+.hud-l{padding:8px 16px}
+.sc-title{font-size:13px;color:var(--mut);font-weight:500}
+.timer{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.15;color:#6b3f22}
+.count{margin-top:6px;font-size:14px;font-weight:500;padding:3px 10px;border-radius:10px;background:#ffe9b8;border:2px solid #e0a64a;display:none}
+.count.red{background:#ffd9d4;border-color:var(--crit);color:#9b2020}
+.hud-r{display:flex;gap:8px;align-items:center;pointer-events:auto}
+.hud-r .chip{padding:7px 14px;font-size:13px;border-width:2px;box-shadow:0 3px 0 var(--line2)}
+.icon-btn{width:40px;height:40px;border-radius:50%;font:inherit;font-weight:600;font-size:18px;border:2px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer;box-shadow:0 3px 0 var(--line2)}
+#hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--abh,0px) + 26px);max-width:min(92vw,720px);text-align:center;background:var(--panel);border:2.5px solid var(--line);border-radius:16px;padding:8px 16px;font-size:15px;display:none;pointer-events:none;box-shadow:0 3px 0 var(--line2)}
+#hint.show{display:block}
+#hint b{color:#b5562a}
+#tooltip{position:fixed;pointer-events:none;background:var(--panel);border:2px solid var(--line);padding:4px 10px;border-radius:10px;font-size:13px;display:none;white-space:nowrap;z-index:5;color:var(--txt)}
+#toasts{position:fixed;top:86px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:20;pointer-events:none;width:min(92vw,600px)}
+.toast{background:var(--panel);border:2.5px solid var(--line);border-left:8px solid var(--pri);padding:9px 14px;border-radius:14px;font-size:15px;box-shadow:0 3px 0 var(--line2),0 8px 20px rgba(60,35,15,.2);animation:tin .25s ease-out;width:100%}
+.toast.ok{border-left-color:var(--ok)}.toast.warn{border-left-color:var(--warn)}.toast.crit{border-left-color:var(--crit);background:#fff0ec}
+.toast.out{opacity:0;transition:opacity .4s}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#actions{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;display:none;gap:8px;flex-wrap:wrap;justify-content:center;background:#b9804f;border:3px solid #8c5a34;border-radius:20px;padding:9px;max-width:96vw;box-shadow:0 4px 0 #6e4425,0 10px 24px rgba(60,35,15,.3)}
+#actions.show{display:flex}
+#flushPanel{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(94vw,560px);padding:16px;display:none;z-index:15}
+#flushPanel.show{display:block}
+.fp-title{font-weight:600;font-size:18px;margin-bottom:10px;color:#2f6f8f}
+.fp-bar{height:18px;border-radius:999px;background:#f1dcc0;border:2px solid var(--line);overflow:hidden}
+#fpFill{height:100%;width:0;background:linear-gradient(90deg,#7cc7e8,#6fb3a3);transition:width .1s}
+.fp-text{margin:8px 0 12px;font-size:14px;color:var(--mut)}
+.hold{width:100%;font:inherit;font-weight:600;font-size:19px;padding:16px;border-radius:16px;border:3px solid #4f97b8;background:#dff1fa;color:#245a73;cursor:pointer;touch-action:none;box-shadow:0 4px 0 #4f97b8}
+.hold small{display:block;font-size:12px;font-weight:400;color:#4f7f94}
+.hold.active{background:#9fd6ee;transform:translateY(3px);box-shadow:0 1px 0 #4f97b8}
+.fp-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.fp-row .btn{flex:1 1 150px;font-size:14px}
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(60,35,15,.35);z-index:30;padding:16px}
+#modal.show{display:flex}
+.m-card{padding:20px;width:min(560px,100%);max-height:90vh;overflow:auto}
+.m-card h3{margin:0 0 10px;font-size:20px;font-weight:600;color:#6b3f22}
+#mBody{font-size:15px;line-height:1.6}
+#mBtns{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+#mBtns .btn{text-align:left}
+.form label{display:block;font-weight:500;margin:12px 0 6px;font-size:14px}
+.form select{width:100%;font:inherit;font-size:15px;padding:8px;border-radius:10px;background:#fff;color:var(--txt);border:2px solid var(--line)}
+.form .cb{display:flex;gap:8px;align-items:center;font-weight:400;margin:4px 0;cursor:pointer}
+.form .cb input{width:18px;height:18px;accent-color:var(--pri2)}
+.sds{background:#fffbea;color:#3a2f00;border:2px dashed #e0b84a;border-radius:12px;padding:12px;margin-top:10px;font-size:14px}
+#intro{position:fixed;inset:0;z-index:40;display:flex;padding:16px;background:rgba(70,50,30,.25);overflow-y:auto}
+.intro-card{width:min(700px,100%);padding:22px 24px;margin:auto;flex-shrink:0}
+.intro-card h1{margin:4px 0 6px;font-size:28px;line-height:1.3;font-weight:600;color:#6b3f22}
+.intro-card p{line-height:1.65;margin:8px 0}
+.kicker{color:#b5562a;font-weight:600;font-size:13px;letter-spacing:.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.opt{border:2.5px solid var(--line);border-radius:16px;padding:12px;cursor:pointer;background:#fffaf0;box-shadow:0 3px 0 var(--line2)}
+.opt.sel{border-color:var(--pri2);background:#e3f3ee;box-shadow:0 3px 0 var(--pri2)}
+.opt b{display:block;font-size:16px;font-weight:600}.opt span{font-size:13px;color:var(--mut)}
+.inp{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--txt);margin-top:6px}
+.ctrls{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;background:var(--panel2);border:2px solid #ead2b4;border-radius:14px;padding:12px;margin:12px 0}
+.ctrls b{font-weight:600}
+.refs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.consent{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--mut);margin:10px 0 2px;cursor:pointer}.consent input{width:18px;height:18px;margin-top:2px;accent-color:var(--pri2);flex-shrink:0}
+#board{position:fixed;inset:0;z-index:60;display:none;padding:16px;background:rgba(70,50,30,.45);overflow-y:auto}#board.show{display:flex}
+.board-card{width:min(980px,100%);margin:auto;padding:20px;flex-shrink:0}
+.b-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.b-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 10px}
+.tab{font:inherit;font-size:13px;padding:6px 10px;border-radius:12px;border:2px solid var(--line);background:#fffaf0;color:var(--txt);cursor:pointer}.tab.on{background:var(--pri);border-color:var(--pri2);color:#fff}
+.b-filter{display:flex;gap:8px;margin-bottom:10px}.b-filter select{flex:1;font:inherit;font-size:14px;padding:8px;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--txt)}
+#bBody{max-height:60vh;overflow:auto;background:#fffaf0;border:2px solid #ead2b4;border-radius:14px}
+.btab{width:100%;border-collapse:collapse;font-size:14px}.btab th{position:sticky;top:0;background:var(--panel2);z-index:1}.btab td,.btab th{padding:8px 10px}
+.btab tr.me td{background:#fff1c2}.btab .rk{font-size:18px;text-align:center;width:44px}.btab .sub{font-size:12px;color:var(--mut)}
+.bdg span{opacity:.18;font-size:16px}.bdg span.got{opacity:1}
+.b-note{font-size:12.5px;color:var(--mut);margin:10px 2px 0}
+#rankBox{background:#fff6d9;border-color:#e8c46a}
+.mods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 6px}
+.mod{border:2.5px solid var(--line);border-radius:14px;padding:8px;cursor:pointer;background:#fffaf0;box-shadow:0 3px 0 var(--line2);text-align:center;line-height:1.25}
+.mod.sel{border-color:var(--pri2);background:#e3f3ee;box-shadow:0 3px 0 var(--pri2)}
+.mod .mi{display:block;font-size:24px}.mod b{display:block;font-weight:600;font-size:14px}.mod span:last-child{font-size:12px;color:var(--mut)}
+@media (max-width:620px){.mods{grid-template-columns:repeat(2,1fr)}}
+#results{position:fixed;inset:0;z-index:45;display:none;overflow:auto;background:rgba(70,50,30,.45);padding:20px}
+#results.show{display:block}
+.res{width:min(860px,100%);margin:0 auto;padding:22px}
+.res-head{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+.badge{font-size:21px;font-weight:600;padding:8px 18px;border-radius:14px}
+.badge.pass{background:#dff3d4;color:#2f6b16;border:2.5px solid var(--ok)}
+.badge.fail{background:#ffe1dc;color:#a12a2a;border:2.5px solid var(--crit)}
+.big{font-size:52px;font-weight:600;line-height:1;color:#6b3f22}.big span{font-size:22px;color:var(--mut)}
+.meta{color:var(--mut);font-size:14px;line-height:1.7}
+.sec{background:#fffaf0;border:2px solid #ead2b4;border-radius:16px;padding:14px 16px;margin:12px 0}
+.sec h4{margin:0 0 10px;font-size:16px;font-weight:600;color:#6b3f22}
+.barrow{display:grid;grid-template-columns:200px 1fr 70px;gap:10px;align-items:center;margin:7px 0;font-size:14px}
+.bar{height:12px;border-radius:999px;background:#f1dcc0;overflow:hidden}.bar i{display:block;height:100%;background:var(--pri)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1.5px solid #f0dcc2;vertical-align:top}
+th{color:var(--mut);font-weight:500}
+.t-ok{color:#2f7d1f}.t-warn{color:#b26b00}.t-crit{color:#c03434;font-weight:600}.t-info{color:var(--mut)}
+.crit-box{border-color:#e8a0a0;background:#fff0ee}
+.res-btns{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
+textarea#json{width:100%;height:180px;background:#2b2118;color:#f6e7cf;border:2px solid var(--line);border-radius:12px;font:12px/1.4 ui-monospace,monospace;padding:10px;display:none}
+#loaderr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:99;background:#fff6e6;padding:20px;text-align:center}
+@media (max-width:620px){.grid2{grid-template-columns:1fr}.barrow{grid-template-columns:1fr 60px}.barrow .bar{grid-column:1/3;grid-row:2}.timer{font-size:24px}#hint{font-size:14px}.btn{font-size:14px;padding:8px 11px}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+<div id="flash"></div>
+
+<div id="hud">
+  <div class="hud-l wood">
+    <div class="sc-title">M3 · สารเคมีกระเด็นเข้าตา</div>
+    <div class="timer" id="timer">--:--</div>
+    <div class="count" id="count">ไปถึงจุดล้างตา: <b id="countN">10</b></div>
+  </div>
+  <div class="hud-r"><span class="chip" id="modeBadge"></span><button class="icon-btn" id="helpBtn" title="วิธีควบคุม">?</button></div>
+</div>
+<div id="hint"></div>
+<div id="tooltip"></div>
+<div id="toasts"></div>
+
+<div id="actions">
+  <button class="btn" id="aHelp">📢 ตะโกนขอความช่วยเหลือ</button>
+  <button class="btn" id="aRub">✋ ขยี้ตา</button>
+  <button class="btn" id="aCloth">👕 ถอดเสื้อผ้าที่เปื้อน</button>
+  <button class="btn" id="aDoc">🏥 ไปพบแพทย์ / รายงาน</button>
+</div>
+
+<div id="flushPanel" class="wood">
+  <div class="fp-title">💧 ที่ล้างตาฉุกเฉิน</div>
+  <div class="fp-bar"><div id="fpFill"></div></div>
+  <div class="fp-text" id="fpText">ล้างแล้ว 0 / 15 นาที</div>
+  <button class="hold" id="holdBtn">กดค้างไว้เพื่อล้างตา<small>หรือกด Space ค้าง · จำลอง 1 วินาที = 1 นาที</small></button>
+  <div class="fp-row">
+    <button class="btn" id="lidsBtn">👁️ ถ่างเปลือกตา: ไม่ได้ทำ</button>
+    <button class="btn" id="lensBtn">ถอดคอนแทคเลนส์</button>
+    <button class="btn" id="clothBtn2">👕 ถอดเสื้อผ้าที่เปื้อน</button>
+    <button class="btn" id="helpBtn2">📢 ตะโกนขอความช่วยเหลือ</button>
+  </div>
+  <button class="btn ghost" id="exitFlush" style="width:100%">หยุดล้าง / ออกจากจุดล้างตา</button>
+</div>
+
+<div id="modal"><div class="m-card wood"><h3 id="mTitle"></h3><div id="mBody"></div><div id="mBtns"></div></div></div>
+
+<div id="intro">
+  <div class="intro-card wood">
+    <div class="kicker">LAB SAFE HERO · 3D LABORATORY EMERGENCY RESPONSE SIMULATION GAME</div>
+    <h1>Lab Safe Hero</h1>
+    <div style="font-size:17px;color:#8a5a34;margin-top:-2px">เกมจำลองรับมือเหตุฉุกเฉินในห้องปฏิบัติการ 3 มิติ</div>
+    <p>คุณคือเจ้าหน้าที่ห้องปฏิบัติการ เลือกสถานการณ์แล้วลงมือรับมือให้ถูกขั้นตอนภายในเวลาที่จำกัด ระบบบันทึกทุกการกระทำพร้อมเวลาและประเมินผลตามมาตรฐาน LA และ HA · ถ้าขอความช่วยเหลือ พี่หัวหน้า Lab จะมาช่วย · ในโหมดฝึกมีหมุด <b>!</b> สีเหลืองชี้จุดที่ควรไป</p>
+    <div style="font-weight:600;font-size:14px;margin-top:10px">เลือกสถานการณ์</div>
+    <div class="mods"><div class="mod" data-mod="M0"><span class="mi">🥼</span><b>M0</b><span>แต่งกายและสวม PPE</span></div><div class="mod" data-mod="M1"><span class="mi">🔍</span><b>M1</b><span>สำรวจอุปกรณ์ความปลอดภัย</span></div><div class="mod" data-mod="M2"><span class="mi">🩸</span><b>M2</b><span>เลือด/สิ่งส่งตรวจหกแตก</span></div><div class="mod sel" data-mod="M3"><span class="mi">👁️</span><b>M3</b><span>สารเคมีกระเด็นเข้าตา</span></div><div class="mod" data-mod="M4"><span class="mi">💉</span><b>M4</b><span>เข็มตำ / สัมผัสเลือด</span></div><div class="mod" data-mod="M5"><span class="mi">🔥</span><b>M5</b><span>ไฟไหม้จากเครื่องมือไฟฟ้า</span></div><div class="mod" data-mod="M6"><span class="mi">💨</span><b>M6</b><span>แก๊สรั่ว</span></div><div class="mod" data-mod="M7"><span class="mi">🗑️</span><b>M7</b><span>คัดแยกขยะ</span></div></div>
+    <label style="font-weight:700;font-size:14px;display:block;margin-top:14px">ชื่อผู้ฝึก
+      <input class="inp" id="nameInp" placeholder="ชื่อที่จะแสดงในตารางอันดับ (ใช้ชื่อเล่นได้)" maxlength="40">
+    </label>
+    <div class="grid2" style="margin:8px 0 0">
+      <label style="font-weight:600;font-size:14px">มหาวิทยาลัย / หน่วยงาน<input class="inp" id="orgInp" placeholder="เช่น ม.มหิดล, รพ.ศิริราช" maxlength="80"></label>
+      <label style="font-weight:600;font-size:14px">คณะ / ชั้นปี (ไม่บังคับ)<input class="inp" id="grpInp" placeholder="เช่น เทคนิคการแพทย์ ปี 4" maxlength="60"></label>
+    </div>
+    <label class="consent"><input type="checkbox" id="consentInp" checked> ยินยอมให้แสดงชื่อ หน่วยงาน คะแนน และเวลาในตารางอันดับสาธารณะ (โหมดสอบเท่านั้นที่นำมาจัดอันดับ)</label>
+    <div class="grid2">
+      <div class="opt sel" data-mode="practice"><b>🎓 โหมดฝึก</b><span>มีคำใบ้และบอกทันทีว่าทำถูกหรือผิด</span></div>
+      <div class="opt" data-mode="exam"><b>📝 โหมดสอบ 🏆</b><span>ไม่มีคำใบ้ เฉลยตอนจบ และนำผลเข้าตารางอันดับ</span></div>
+    </div>
+    <div class="ctrls">
+      <b>ลากเมาส์ / ลากนิ้ว</b><span>หมุนมุมกล้อง · ล้อเมาส์หรือจีบนิ้ว = ซูม</span>
+      <b>คลิกที่พื้น</b><span>เดินไปยังจุดนั้น</span>
+      <b>คลิกที่อุปกรณ์</b><span>เดินไปและใช้งานอุปกรณ์</span>
+      <b>W A S D / ลูกศร</b><span>เดิน (คอมพิวเตอร์)</span>
+    </div>
+    <div style="display:flex;gap:10px"><button class="btn pri" id="startBtn" style="flex:1;font-size:18px;padding:14px">เข้าสู่ห้องปฏิบัติการ</button><button class="btn" id="introBoard" style="font-size:16px;padding:14px 18px">🏆 ตารางอันดับ</button></div>
+    <p style="font-size:12.5px;color:var(--mut);margin-top:12px">ทุกครั้งที่เริ่มใหม่ ระบบจะสุ่มชนิดสาร ตำแหน่งที่ล้างตา และเงื่อนไขของผู้ฝึก · ขั้นตอนในต้นแบบนี้เป็นแนวทางทั่วไป ก่อนใช้จริงต้องให้ผู้จัดการความปลอดภัยของหน่วยงานรับรองให้ตรงกับคู่มือความปลอดภัย</p>
+  </div>
+</div>
+
+<div id="results"></div>
+<div id="board"><div class="board-card wood">
+  <div class="b-head"><div><div class="kicker">LAB SAFE HERO · LEADERBOARD</div><h2 id="bTitle" style="margin:2px 0 0;font-weight:600;color:#6b3f22;font-size:21px">ตารางอันดับ</h2></div><button class="icon-btn" id="bClose" title="ปิด">✕</button></div>
+  <div class="b-tabs" id="bTabs"></div>
+  <div class="b-filter"><select id="bOrg"><option value="">ทุกมหาวิทยาลัย / หน่วยงาน</option></select><button class="btn" id="bRefresh">↻ รีเฟรช</button></div>
+  <div id="bBody"></div>
+  <p class="b-note">นับเฉพาะ<b>โหมดสอบ</b> · ใช้ผลดีที่สุดของแต่ละคน · เรียงตาม ผ่านเกณฑ์ → คะแนนสูง → เวลาน้อย · อันดับรวมเรียงตามจำนวนโมดูลที่ผ่าน → คะแนนรวม → เวลารวม</p>
+</div></div>
+<div id="loaderr"><div><h2>โหลดเอนจิน 3D ไม่สำเร็จ</h2><p>กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วโหลดหน้านี้ใหม่</p></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+if(!window.THREE){ $('#loaderr').style.display='flex'; return; }
+
+/* ================= STATE ================= */
+const CHEMS=[
+  {id:'hcl',  name:'กรดไฮโดรคลอริก (HCl) 37%',   short:'HCl 37%'},
+  {id:'h2so4',name:'กรดซัลฟิวริก (H₂SO₄) 98%',  short:'H₂SO₄ 98%'},
+  {id:'hno3', name:'กรดไนตริก (HNO₃) 65%',      short:'HNO₃ 65%'},
+  {id:'naoh', name:'โซเดียมไฮดรอกไซด์ (NaOH) 1 M',short:'NaOH 1 M'}
+];
+const S={
+  phase:'intro', mode:'practice', name:'',
+  chem:CHEMS[Math.floor(Math.random()*CHEMS.length)],
+  side:Math.random()<0.5?'A':'B',
+  lens:Math.random()<0.5,
+  t0:0, endT:null, ui:false,
+  help:false, helpT:null, eyewashT:null, firstLoc:null, lever:null,
+  lidsOpen:false, lidsTime:0, flushTime:0, flushDone:false, flushDoneT:null,
+  lensRemoved:false, clothing:false, clothingT:null, sdsOk:false, sdsT:null,
+  usedNeutral:false, critical:[], log:[], blurBase:0, holding:false, report:null
+};
+const t=()=>S.t0?(performance.now()-S.t0)/1000:0;
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+const exam=()=>S.mode==='exam';
+function log(action,type,note,ref){ S.log.push({t:+t().toFixed(1),action,type,note:note||'',ref:ref||''}); }
+function toast(msg,type='info',ms=3800){
+  const d=document.createElement('div'); d.className='toast '+type; d.textContent=msg; $('#toasts').appendChild(d);
+  while($('#toasts').children.length>3) $('#toasts').firstChild.remove();
+  setTimeout(()=>{d.classList.add('out'); setTimeout(()=>d.remove(),400);},ms);
+}
+/* feedback: practice shows evaluative message; exam shows neutral message only */
+function fb(type,practiceMsg,neutralMsg){ if(exam()){ if(neutralMsg) toast(neutralMsg,'info'); } else toast(practiceMsg,type); }
+function crit(action,note,ref){
+  if(!S.critical.find(c=>c.action===action)) S.critical.push({action,note,ref});
+  log(action,'crit',note,ref);
+  fb('crit','⛔ '+action+' — '+note,'บันทึก: '+action);
+  beep(170,0.45,0.14,'square');
+}
+function setFirst(loc){ if(!S.firstLoc) S.firstLoc=loc; }
+
+/* ================= AUDIO ================= */
+let AC=null, waterGain=null, noiseBuf=null;
+function initAudio(){
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    const len=AC.sampleRate*2, buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    noiseBuf=buf;
+    const src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1100;
+    waterGain=AC.createGain(); waterGain.gain.value=0;
+    src.connect(f); f.connect(waterGain); waterGain.connect(AC.destination); src.start();
+  }catch(e){ AC=null; }
+}
+function beep(freq,dur,vol=0.08,type='sine'){
+  if(!AC) return;
+  try{ const o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+dur+0.02);}catch(e){}
+}
+function splashSound(){
+  if(!AC||!noiseBuf) return;
+  try{ const s=AC.createBufferSource(); s.buffer=noiseBuf; const f=AC.createBiquadFilter(); f.type='highpass'; f.frequency.value=1800;
+    const g=AC.createGain(); g.gain.setValueAtTime(0.35,AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.6);
+    s.connect(f); f.connect(g); g.connect(AC.destination); s.start(); s.stop(AC.currentTime+0.7);}catch(e){}
+  beep(880,0.25,0.06,'triangle');
+}
+
+/* ================= THREE SETUP ================= */
+const canvas=$('#c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.0;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0xb7d89a); scene.fog=new THREE.Fog(0xb7d89a,28,52);
+const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,0.1,120);
+const P={x:0,z:1.6,yaw:Math.PI,yawT:null,path:[],pending:null,flushPos:null};
+const CAM={yaw:0.78,pitch:0.9,dist:11,init:false};
+const tmpV=new THREE.Vector3(), tmpL=new THREE.Vector3(), camLook=new THREE.Vector3(0,0.9,1.6);
+scene.add(new THREE.HemisphereLight(0xfff4e0,0x86a86a,0.62));
+scene.add(new THREE.AmbientLight(0xfff0dc,0.12));
+const dl=new THREE.DirectionalLight(0xffe4bf,1.05); dl.position.set(-7,14,9); dl.castShadow=true;
+dl.shadow.mapSize.set(2048,2048); Object.assign(dl.shadow.camera,{left:-17,right:17,top:14,bottom:-14,near:1,far:40}); dl.shadow.bias=-0.0004; dl.shadow.normalBias=0.03; dl.shadow.radius=3; dl.shadow.camera.updateProjectionMatrix();
+scene.add(dl);
+const OBS=[], INTER={};
+function addObs(cx,cz,w,d){ OBS.push({minX:cx-w/2,maxX:cx+w/2,minZ:cz-d/2,maxZ:cz+d/2}); }
+function mat(c,o){ return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.85,metalness:0.0},o||{})); }
+const RB={};
+function rgeo(w,h,d,r){ const key=[w,h,d,r].join(','); if(RB[key]) return RB[key];
+  r=Math.max(0.002,Math.min(r,w/2-0.002,h/2-0.002,d/2-0.002)); const W=w-2*r,H=h-2*r,x=-W/2,y=-H/2,q=Math.min(r*0.6,W/2,H/2);
+  const s=new THREE.Shape(); s.moveTo(x+q,y); s.lineTo(x+W-q,y); s.quadraticCurveTo(x+W,y,x+W,y+q); s.lineTo(x+W,y+H-q); s.quadraticCurveTo(x+W,y+H,x+W-q,y+H); s.lineTo(x+q,y+H); s.quadraticCurveTo(x,y+H,x,y+H-q); s.lineTo(x,y+q); s.quadraticCurveTo(x,y,x+q,y);
+  const g=new THREE.ExtrudeGeometry(s,{depth:Math.max(0.001,d-2*r),bevelEnabled:true,bevelThickness:r,bevelSize:r,bevelSegments:3,curveSegments:4}); g.center(); return RB[key]=g; }
+function rbox(w,h,d,m,x,y,z,parent,r){ const me=new THREE.Mesh(rgeo(w,h,d,r==null?Math.min(0.045,w/4,h/4,d/4):r),typeof m==='number'?mat(m):m); me.position.set(x,y,z); me.castShadow=true; me.receiveShadow=true; (parent||scene).add(me); return me; }
+function box(w,h,d,m,x,y,z,parent){ const g=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),typeof m==='number'?mat(m):m); g.position.set(x,y,z); g.castShadow=true; g.receiveShadow=true; (parent||scene).add(g); return g; }
+function cyl(rt,rb,h,m,x,y,z,parent,seg){ const g=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||24),typeof m==='number'?mat(m):m); g.position.set(x,y,z); g.castShadow=true; g.receiveShadow=true; (parent||scene).add(g); return g; }
+function reg(obj,id,name,ax,az){ obj.userData.id=id; INTER[id]={obj,name,ax,az}; }
+function canvasTex(w,h,draw){ const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d'); draw(g,w,h); const tx=new THREE.CanvasTexture(c); tx.encoding=THREE.sRGBEncoding; tx.anisotropy=renderer.capabilities.getMaxAnisotropy(); return tx; }
+const FONT="Sarabun, 'Noto Sans Thai', Tahoma, sans-serif";
+function signTex(lines,bg,fg,w,h,icon){
+  return canvasTex(w,h,(g)=>{
+    g.fillStyle=bg; g.fillRect(0,0,w,h);
+    g.strokeStyle=fg; g.lineWidth=Math.max(6,h*0.035); g.strokeRect(h*0.04,h*0.04,w-h*0.08,h-h*0.08);
+    const x0=icon?h*0.95:0; if(icon) icon(g,h*0.14,h*0.14,h*0.72,fg);
+    const area=w-x0, n=lines.length; g.fillStyle=fg; g.textAlign='center'; g.textBaseline='middle';
+    lines.forEach((ln,i)=>{ let size=Math.floor(h*0.6/n); g.font=`800 ${size}px ${FONT}`;
+      while(g.measureText(ln).width>area-h*0.2 && size>10){ size-=2; g.font=`800 ${size}px ${FONT}`; }
+      g.fillText(ln,x0+area/2,(h/n)*(i+0.5)+(n===1?0:(i===0?h*0.03:-h*0.03))); });
+  });
+}
+function sign(lines,bg,fg,w,h,x,y,z,ry,icon,parent){
+  const tx=signTex(lines,bg,fg,512,Math.round(512*h/w),icon);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tx,toneMapped:false}));
+  m.position.set(x,y,z); m.rotation.y=ry||0; (parent||scene).add(m); return m;
+}
+/* icons */
+function eyeIcon(g,x,y,s,col){ g.save(); g.strokeStyle=col; g.fillStyle=col; g.lineWidth=s*0.07; const cx=x+s/2, cy=y+s*0.4;
+  g.beginPath(); g.moveTo(x+s*0.06,cy); g.quadraticCurveTo(cx,cy-s*0.42,x+s*0.94,cy); g.quadraticCurveTo(cx,cy+s*0.42,x+s*0.06,cy); g.stroke();
+  g.beginPath(); g.arc(cx,cy,s*0.13,0,Math.PI*2); g.fill();
+  [[0.28,0.82],[0.5,0.9],[0.72,0.82]].forEach(([a,b])=>{const dx=x+s*a,dy=y+s*b; g.beginPath(); g.moveTo(dx,dy-s*0.1); g.quadraticCurveTo(dx+s*0.07,dy,dx,dy+s*0.05); g.quadraticCurveTo(dx-s*0.07,dy,dx,dy-s*0.1); g.fill();});
+  g.restore(); }
+function crossIcon(g,x,y,s,col){ g.fillStyle=col; const k=s*0.3; g.fillRect(x+(s-k)/2,y+s*0.08,k,s*0.84); g.fillRect(x+s*0.08,y+(s-k)/2,s*0.84,k); }
+function showerIcon(g,x,y,s,col){ g.save(); g.strokeStyle=col; g.fillStyle=col; g.lineWidth=s*0.07;
+  g.beginPath(); g.arc(x+s*0.5,y+s*0.25,s*0.22,Math.PI,0); g.closePath(); g.fill();
+  for(let i=0;i<5;i++){ const xx=x+s*(0.3+i*0.1); g.beginPath(); g.moveTo(xx,y+s*0.36); g.lineTo(xx-s*0.04,y+s*0.9); g.stroke(); } g.restore(); }
+function flameIcon(g,x,y,s,col){ g.save(); g.fillStyle=col; g.beginPath(); g.moveTo(x+s*0.5,y+s*0.05);
+  g.bezierCurveTo(x+s*0.95,y+s*0.45,x+s*0.85,y+s*0.95,x+s*0.5,y+s*0.95); g.bezierCurveTo(x+s*0.15,y+s*0.95,x+s*0.05,y+s*0.5,x+s*0.35,y+s*0.3);
+  g.bezierCurveTo(x+s*0.35,y+s*0.5,x+s*0.45,y+s*0.55,x+s*0.5,y+s*0.05); g.fill(); g.restore(); }
+function exitIcon(g,x,y,s,col){ g.save(); g.fillStyle=col; g.beginPath(); g.moveTo(x+s*0.1,y+s*0.38); g.lineTo(x+s*0.55,y+s*0.38); g.lineTo(x+s*0.55,y+s*0.15); g.lineTo(x+s*0.95,y+s*0.5); g.lineTo(x+s*0.55,y+s*0.85); g.lineTo(x+s*0.55,y+s*0.62); g.lineTo(x+s*0.1,y+s*0.62); g.closePath(); g.fill(); g.restore(); }
+function phoneIcon(g,x,y,s,col){ g.save(); g.fillStyle=col; g.beginPath(); g.ellipse(x+s*0.5,y+s*0.5,s*0.42,s*0.2,-0.7,0,Math.PI*2); g.fill(); g.restore(); }
+
+/* ================= BUILD ROOM ================= */
+let acidMat=null, acidG=null, eyewashG=null, puddle=null, waterMeshes=[], ring=null;
+function buildWorld(){
+  const rnd=(a,b)=>a+Math.random()*(b-a);
+  // ---------- outdoors ----------
+  const grassTex=canvasTex(512,512,(g,w,h)=>{ g.fillStyle='#93c46b'; g.fillRect(0,0,w,h);
+    for(let k=0;k<5000;k++){ const v=Math.random(); g.strokeStyle=v<0.5?`rgba(120,175,80,${rnd(.2,.6)})`:(v<0.85?`rgba(170,210,120,${rnd(.2,.6)})`:`rgba(95,150,70,${rnd(.2,.5)})`); g.lineWidth=rnd(1,2.5); const x=Math.random()*w,y=Math.random()*h; g.beginPath(); g.moveTo(x,y); g.lineTo(x+rnd(-2,2),y-rnd(3,8)); g.stroke(); } });
+  grassTex.wrapS=grassTex.wrapT=THREE.RepeatWrapping; grassTex.repeat.set(14,14);
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(70,70),mat(0xffffff,{map:grassTex,roughness:1})); ground.rotation.x=-Math.PI/2; ground.position.y=-0.2; ground.receiveShadow=true; scene.add(ground);
+  const dirt=mat(0xdcb98d,{roughness:1});
+  const path1=rbox(1.8,0.04,9,dirt,-4.6,-0.19,9.6,null,0.02); path1.castShadow=false;
+  const path2=rbox(26,0.04,1.6,dirt,0,-0.19,14.5,null,0.02); path2.castShadow=false;
+  rbox(15.0,0.24,11.0,mat(0xd9c4a3),0,-0.12,0,null,0.05); // plinth
+  rbox(1.6,0.14,0.6,mat(0xd9c4a3),-4.6,-0.1,5.6,null,0.04); // step
+  // trees, bushes, flowers
+  const leafC=[0x6fae4f,0x7fbf5a,0x5f9e45,0x86c463];
+  function tree(x,z,s){ const g=new THREE.Group(); g.position.set(x,-0.2,z); g.scale.setScalar(s); scene.add(g);
+    cyl(0.14,0.2,1.3,mat(0x8b5a3c),0,0.65,0,g);
+    [[0,2.1,0,1.05],[0.6,1.75,0.3,0.75],[-0.55,1.8,-0.2,0.8],[0.1,2.7,-0.1,0.7],[-0.2,1.7,0.55,0.65]].forEach(([a,b,c,r],i)=>{ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,2),mat(leafC[i%4],{flatShading:false})); m.position.set(a,b,c); m.castShadow=true; m.receiveShadow=true; g.add(m); }); }
+  function pine(x,z,s){ const g=new THREE.Group(); g.position.set(x,-0.2,z); g.scale.setScalar(s); scene.add(g); cyl(0.12,0.16,0.8,mat(0x7a4e33),0,0.4,0,g);
+    [[1.1,1.2,1.0],[0.85,1.0,1.65],[0.55,0.8,2.2]].forEach(([r,h,y])=>{ const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,9),mat(0x4f9a52)); c.position.y=y; c.castShadow=true; g.add(c); }); }
+  function bush(x,z,s){ const g=new THREE.Group(); g.position.set(x,-0.2,z); g.scale.setScalar(s); scene.add(g);
+    [[0,0.35,0,0.45],[0.4,0.28,0.1,0.35],[-0.38,0.3,-0.05,0.38]].forEach(([a,b,c,r],i)=>{ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,2),mat(leafC[(i+1)%4])); m.position.set(a,b,c); m.castShadow=true; g.add(m); });
+    for(let i=0;i<5;i++){ const f=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,6),mat(i%2?0xfff6a8:0xffd6e8)); f.position.set(rnd(-0.5,0.5),rnd(0.45,0.7),rnd(0.1,0.4)); g.add(f); } }
+  [[-11,-7,1.2],[10.5,-7.5,1.3],[12,1,1.1],[-12,1.5,1.25],[-10,9,1.0],[7.5,10,1.15],[-13,-3,1.0],[13.5,6,1.2],[3,-9,1.1]].forEach(a=>tree(...a));
+  [[-9,-9,1],[9,-10,1.1],[-14,6,0.9],[14,-4,1]].forEach(a=>pine(...a));
+  [[-8.6,-2,1],[8.7,2.5,1.1],[-8.4,5,0.9],[8.6,-4,1],[-2,7,0.8],[2.8,7.2,1],[6,7,0.9],[-8,7.8,0.9]].forEach(a=>bush(...a));
+  const out=(x,z)=>(Math.abs(x)<7.8&&Math.abs(z)<5.9)||(Math.abs(x+4.6)<1.2&&z>5&&z<14.5)||(Math.abs(z-14.5)<1.1);
+  const fl=new THREE.InstancedMesh(new THREE.SphereGeometry(0.055,6,5),mat(0xffffff),260), tf=new THREE.InstancedMesh(new THREE.ConeGeometry(0.06,0.28,4),mat(0x7db455),700);
+  const dm=new THREE.Object3D(), fc=[0xffffff,0xfff3a0,0xffc8de,0xd7c8ff].map(c=>new THREE.Color(c)); let n=0;
+  while(n<260){ const x=rnd(-22,22), z=rnd(-16,20); if(out(x,z)) continue; dm.position.set(x,-0.12,z); dm.scale.setScalar(rnd(0.7,1.3)); dm.updateMatrix(); fl.setMatrixAt(n,dm.matrix); fl.setColorAt(n,fc[n%4]); n++; }
+  n=0; while(n<700){ const x=rnd(-22,22), z=rnd(-16,20); if(out(x,z)) continue; dm.position.set(x,-0.07,z); dm.rotation.set(rnd(-0.2,0.2),rnd(0,3),rnd(-0.2,0.2)); dm.scale.setScalar(rnd(0.7,1.4)); dm.updateMatrix(); tf.setMatrixAt(n,dm.matrix); n++; }
+  fl.userData.noPick=true; tf.userData.noPick=true; scene.add(fl); scene.add(tf);
+  // signpost outside
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.1,1.3,0.1,mat(0x9b6a43),-2.9,0.45,6.4,g); rbox(1.5,0.55,0.08,mat(0xc58d5d),-2.9,1.15,6.4,g,0.03);
+    sign(['LAB 1','ห้องปฏิบัติการ'],'#fff1d6','#6b3f22',1.36,0.44,-2.9,1.15,6.445,0,null,g); })();
+
+  // ---------- floor & walls ----------
+  const floorTex=canvasTex(512,512,(g,w,h)=>{ for(let i=0;i<4;i++)for(let j=0;j<4;j++){ g.fillStyle=(i+j)%2?'#d5e8e1':'#f8efe2'; g.fillRect(i*128,j*128,128,128); }
+    g.strokeStyle='rgba(180,160,140,.55)'; g.lineWidth=3; for(let i=0;i<=4;i++){ g.beginPath(); g.moveTo(i*128,0); g.lineTo(i*128,h); g.stroke(); g.beginPath(); g.moveTo(0,i*128); g.lineTo(w,i*128); g.stroke(); } });
+  floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping; floorTex.repeat.set(7,5);
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(14,10),mat(0xffffff,{map:floorTex,roughness:0.6})); floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; floor.userData.floor=true; scene.add(floor);
+  const wallM=mat(0xf6e7cf), wainM=mat(0xe6c9a0), trimM=mat(0xc0825a,{roughness:0.7}), outM=mat(0xedd8b8);
+  // tall back & left walls
+  rbox(14.5,2.7,0.26,outM,0,1.35,-5.13,null,0.05); rbox(0.26,2.7,10.5,outM,-7.13,1.35,0,null,0.05);
+  const bw=rbox(14,2.69,0.02,wallM,0,1.345,-5.0,null,0.005); bw.castShadow=false; const lw=rbox(0.02,2.69,10,wallM,-7.0,1.345,0,null,0.005); lw.castShadow=false;
+  rbox(14,0.95,0.04,wainM,0,0.475,-4.985,null,0.015).castShadow=false; rbox(0.04,0.95,10,wainM,-6.985,0.475,0,null,0.015).castShadow=false;
+  rbox(14,0.06,0.07,trimM,0,0.96,-4.97,null,0.02); rbox(0.07,0.06,10,trimM,-6.97,0.96,0,null,0.02);
+  rbox(14.7,0.14,0.36,trimM,0,2.75,-5.13,null,0.05); rbox(0.36,0.14,10.7,trimM,-7.13,2.75,0,null,0.05);
+  // low front & right walls (cut-away)
+  rbox(2.15,0.6,0.26,outM,-6.17,0.3,5.13,null,0.05); rbox(11.0,0.6,0.26,outM,1.6,0.3,5.13,null,0.05); rbox(0.26,0.6,10.5,outM,7.13,0.3,0,null,0.05);
+  rbox(2.2,0.12,0.36,trimM,-6.15,0.64,5.13,null,0.05); rbox(11.1,0.12,0.36,trimM,1.6,0.64,5.13,null,0.05); rbox(0.36,0.12,10.7,trimM,7.13,0.64,0,null,0.05);
+  [[-7.13,5.13],[7.13,5.13],[7.13,-5.13]].forEach(([x,z])=>rbox(0.42,z<0?2.85:0.95,0.42,trimM,x,z<0?1.4:0.47,z,null,0.06));
+  // window on left wall
+  (function(){ const z=0.7; rbox(0.1,1.15,1.15,trimM,-6.97,1.65,z,null,0.04);
+    const gl=new THREE.Mesh(new THREE.PlaneGeometry(0.95,0.95),new THREE.MeshBasicMaterial({color:0xcdeaf5})); gl.rotation.y=Math.PI/2; gl.position.set(-6.91,1.65,z); scene.add(gl);
+    rbox(0.06,0.95,0.05,trimM,-6.9,1.65,z,null,0.015); rbox(0.06,0.05,0.95,trimM,-6.9,1.65,z,null,0.015); rbox(0.25,0.06,1.25,trimM,-6.86,1.06,z,null,0.02); })();
+  // wall clock above shelves
+  (function(){ const g=new THREE.Group(); g.position.set(2.0,2.35,-4.97); scene.add(g); const c=cyl(0.2,0.2,0.05,mat(0xc0825a),0,0,0,g); c.rotation.x=Math.PI/2;
+    const f=cyl(0.17,0.17,0.02,mat(0xfffaf0),0,0,0.02,g); f.rotation.x=Math.PI/2; box(0.012,0.12,0.01,mat(0x4a2f1d),0,0.05,0.04,g); const hm=box(0.012,0.09,0.01,mat(0x4a2f1d),0.03,0.02,0.04,g); hm.rotation.z=-1.1; })();
+
+  // ---------- benches ----------
+  const cabM=mat(0xf6efe4), drawM=mat(0xfbf7f0), knobM=mat(0xc0825a), topM=mat(0x6aa89c,{roughness:0.55}), woodM=mat(0xd59b63);
+  function bench(cx,cz,w,d){ rbox(w,0.78,d-0.1,cabM,cx,0.44,cz,null,0.05); rbox(w-0.1,0.06,d-0.22,mat(0x9a7b62),cx,0.03,cz,null,0.02);
+    const nD=Math.floor(w/0.62);
+    for(let i=0;i<nD;i++){ const x=cx-w/2+0.33+i*(w-0.06)/nD; [1,-1].forEach(s=>{ const fz=cz+s*(d/2-0.04); rbox(0.52,0.3,0.04,drawM,x,0.62,fz,null,0.015); rbox(0.52,0.36,0.04,drawM,x,0.24,fz,null,0.015);
+      const k=new THREE.Mesh(new THREE.SphereGeometry(0.025,10,8),knobM); k.position.set(x,0.66,fz+s*0.03); scene.add(k); }); }
+    rbox(w+0.08,0.07,d+0.04,topM,cx,0.835,cz,null,0.03);
+    rbox(w-0.6,0.045,0.28,woodM,cx,1.28,cz,null,0.02); [-1,1].forEach(s=>rbox(0.06,0.42,0.06,woodM,cx+s*(w/2-0.32),1.07,cz,null,0.02));
+    addObs(cx,cz,w,d); }
+  bench(0,0,5,1.2); bench(0,-2.9,5,1.2);
+  const glassC=[0xd08a3a,0x9fd8cd,0xe6f3f7,0xd08a3a,0xb9dcf0,0xf3c98b], capC=[0xd65a4a,0x4a8fd6,0x5a9e5a,0xe0a03a,0x7a6bd0];
+  function bottle(x,y,z,c,h,r){ const gm=mat(c,{roughness:0.25,transparent:true,opacity:0.88}); cyl(r,r,h*0.8,gm,x,y+h*0.4,z); const sh=new THREE.Mesh(new THREE.SphereGeometry(r,14,8,0,Math.PI*2,0,Math.PI/2),gm); sh.position.set(x,y+h*0.8,z); sh.castShadow=true; scene.add(sh);
+    cyl(r*0.5,r*0.5,h*0.2,mat(capC[Math.floor(Math.random()*capC.length)],{roughness:0.5}),x,y+h*0.8+r*0.9,z); const lb=cyl(r*1.02,r*1.02,h*0.32,mat(0xfffaf0),x,y+h*0.38,z); lb.castShadow=false; }
+  for(let i=0;i<9;i++) bottle(-2.1+i*0.52,1.303,(i%2?0.04:-0.04),glassC[i%glassC.length],0.17+Math.random()*0.05,0.04);
+  for(let i=0;i<9;i++) bottle(-2.1+i*0.52,1.303,-2.9,glassC[(i+2)%glassC.length],0.17+Math.random()*0.05,0.04);
+  // equipment
+  const wht=mat(0xfaf6ef), dgr=mat(0x4a4f57,{roughness:0.6}), stl=mat(0xc8ccd0,{metalness:0.6,roughness:0.35});
+  (function microscope(x,z){ rbox(0.24,0.05,0.3,dgr,x,0.895,z,null,0.02); rbox(0.08,0.34,0.09,wht,x,1.08,z-0.09,null,0.03); rbox(0.09,0.1,0.2,wht,x,1.25,z-0.03,null,0.03);
+    rbox(0.16,0.02,0.15,dgr,x,1.02,z+0.03,null,0.008); const ep=cyl(0.02,0.02,0.12,dgr,x,1.33,z-0.08); ep.rotation.x=-0.6; cyl(0.026,0.02,0.06,stl,x,1.18,z+0.03); })(1.6,-2.62);
+  (function(x,z){ cyl(0.21,0.22,0.24,wht,x,0.99,z); cyl(0.18,0.2,0.04,mat(0x7fb8c9,{roughness:0.4}),x,1.125,z); rbox(0.15,0.06,0.06,dgr,x,0.95,z+0.21,null,0.02); })(1.9,-0.15);
+  (function(x,z){ rbox(0.2,0.02,0.15,dgr,x,0.88,z,null,0.008); rbox(0.04,0.25,0.04,dgr,x,1.0,z-0.02,null,0.015); rbox(0.6,0.38,0.04,dgr,x,1.25,z,null,0.03);
+    const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.54,0.32),new THREE.MeshBasicMaterial({map:canvasTex(256,150,(g,w,h)=>{ g.fillStyle='#e8f4f1'; g.fillRect(0,0,w,h); g.fillStyle='#6aa89c'; g.fillRect(10,10,w-20,16); g.fillStyle='#b8c9c4'; for(let i=0;i<7;i++) g.fillRect(14,38+i*15,80+Math.random()*130,6); })}));
+    scr.position.set(x,1.25,z+0.022); scene.add(scr); rbox(0.44,0.025,0.15,mat(0xe9e2d6),x,0.885,z+0.26,null,0.01); })(-0.6,-2.65);
+  rbox(0.44,0.08,0.13,mat(0x4a8fd6),-1.6,0.91,-2.55,null,0.02);
+  for(let i=0;i<8;i++) cyl(0.012,0.012,0.11,mat(i%2?0xd65a4a:0x9b7fe0),-1.85+i*0.07,0.965,-2.55);
+  (function(x,z){ rbox(0.17,0.02,0.17,dgr,x,0.88,z,null,0.008); cyl(0.012,0.012,0.38,stl,x,1.07,z); [0,2.1,4.2].forEach((a,i)=>{ cyl(0.016,0.009,0.25,mat([0x4a8fd6,0xe0a03a,0x5a9e5a][i]),x+Math.cos(a)*0.055,1.08,z+Math.sin(a)*0.055); }); })(1.25,-0.3);
+  // acid bottle (interactable)
+  const acid=new THREE.Group(); acidG=acid; acid.position.set(-0.3,0.87,0.34); scene.add(acid);
+  acidMat=mat(0xb8691f,{roughness:0.2,transparent:true,opacity:0.92,emissive:0xff9a3c,emissiveIntensity:0});
+  cyl(0.07,0.07,0.22,acidMat,0,0.11,0,acid); const ash=new THREE.Mesh(new THREE.SphereGeometry(0.07,16,8,0,Math.PI*2,0,Math.PI/2),acidMat); ash.position.y=0.22; acid.add(ash);
+  cyl(0.032,0.032,0.06,acidMat,0,0.3,0,acid); cyl(0.036,0.036,0.04,mat(0xd65a4a),0,0.34,0,acid);
+  const lab=canvasTex(256,150,(g,w,h)=>{ g.fillStyle='#fffaf0'; g.fillRect(0,0,w,h); g.fillStyle='#3a2a1d'; g.textAlign='center'; g.font=`800 40px ${FONT}`; g.fillText(S.chem.short,w/2,52);
+    g.fillStyle='#c0392b'; g.font=`700 24px ${FONT}`; g.fillText('อันตราย · กัดกร่อน',w/2,90); g.save(); g.translate(w/2,124); g.rotate(Math.PI/4); g.strokeStyle='#c0392b'; g.lineWidth=4; g.strokeRect(-14,-14,28,28); g.restore(); });
+  const lm=new THREE.Mesh(new THREE.PlaneGeometry(0.11,0.065),new THREE.MeshBasicMaterial({map:lab})); lm.position.set(0,0.11,0.072); acid.add(lm);
+  reg(acid,'acid','ขวดสารเคมี '+S.chem.short,-0.3,1.0);
+  cyl(0.05,0.045,0.12,mat(0xe6f3f7,{roughness:0.1,transparent:true,opacity:0.45}),0.05,0.93,0.36);
+  puddle=new THREE.Mesh(new THREE.CircleGeometry(0.16,24),mat(0x8a4a12,{roughness:0.15,transparent:true,opacity:0.75}));
+  puddle.rotation.x=-Math.PI/2; puddle.position.set(-0.15,0.8715,0.42); puddle.visible=false; puddle.userData.noPick=true; scene.add(puddle);
+  const neu=new THREE.Group(); neu.position.set(0.95,0.87,0.34); scene.add(neu);
+  cyl(0.06,0.065,0.2,mat(0xfaf6ef),0,0.1,0,neu); cyl(0.028,0.028,0.05,mat(0x4a8fd6),0,0.225,0,neu);
+  const nl=canvasTex(256,150,(g,w,h)=>{ g.fillStyle='#e3f1fb'; g.fillRect(0,0,w,h); g.fillStyle='#24506e'; g.textAlign='center'; g.font=`800 36px ${FONT}`; g.fillText('NaHCO₃ 5%',w/2,60); g.font=`600 22px ${FONT}`; g.fillText('สารละลายทำให้เป็นกลาง',w/2,104); });
+  const nm=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.06),new THREE.MeshBasicMaterial({map:nl})); nm.position.set(0,0.1,0.066); neu.add(nm);
+  reg(neu,'neutral','ขวดสารละลาย NaHCO₃ 5%',0.95,1.0);
+
+  // ---------- back wall ----------
+  // fume hood
+  rbox(1.8,0.85,0.8,cabM,-4.5,0.425,-4.55,null,0.05); rbox(1.86,0.06,0.84,topM,-4.5,0.88,-4.55,null,0.025);
+  [-1,1].forEach(s=>rbox(0.1,1.45,0.8,cabM,-4.5+s*0.88,1.6,-4.55,null,0.04)); rbox(1.86,0.42,0.84,cabM,-4.5,2.5,-4.55,null,0.05);
+  rbox(1.66,1.45,0.04,mat(0xe9e2d6),-4.5,1.6,-4.93,null,0.01);
+  const sash=rbox(1.66,0.72,0.03,mat(0xcfeaf3,{transparent:true,opacity:0.35,roughness:0.1}),-4.5,1.95,-4.16,null,0.01); sash.castShadow=false;
+  rbox(1.7,0.05,0.06,trimM,-4.5,1.58,-4.15,null,0.02);
+  sign(['FUME HOOD','ตู้ดูดควัน'],'#6aa89c','#ffffff',0.62,0.22,-4.5,2.5,-4.125,0);
+  addObs(-4.5,-4.55,1.8,0.85);
+  // red bin (back-left corner)
+  cyl(0.2,0.17,0.55,mat(0xd65a4a),-6.3,0.275,-4.6); cyl(0.21,0.21,0.04,mat(0xb94a3c),-6.3,0.56,-4.6); sign(['ขยะติดเชื้อ'],'#d65a4a','#ffffff',0.3,0.1,-6.3,0.38,-4.39,0); addObs(-6.3,-4.6,0.45,0.45);
+  // phone
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.2,0.27,0.08,mat(0x4a4f57),-2.9,1.35,-4.955,g,0.03); rbox(0.06,0.2,0.05,mat(0x33373d),-2.97,1.37,-4.9,g,0.02);
+    sign(['แจ้งเหตุฉุกเฉิน','โทร 1111'],'#d65a4a','#ffffff',0.6,0.3,-2.9,1.85,-4.985,0,phoneIcon,g);
+    reg(g,'phone','โทรศัพท์แจ้งเหตุฉุกเฉิน',-2.9,-4.1); })();
+  // first aid
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.46,0.36,0.15,mat(0xfaf6ef),-2.2,1.4,-4.92,g,0.04);
+    sign(['ปฐมพยาบาล'],'#4caf6a','#ffffff',0.38,0.26,-2.2,1.42,-4.843,0,crossIcon,g);
+    reg(g,'firstaid','ชุดปฐมพยาบาล',-2.2,-4.15); })();
+  sign(['สวมแว่นตานิรภัย','EYE PROTECTION REQUIRED'],'#3d7cc9','#ffffff',0.9,0.34,-1.3,1.8,-4.985,0,eyeIcon);
+  const poster=canvasTex(512,680,(g,w,h)=>{ g.fillStyle='#fffaf0'; g.fillRect(0,0,w,h); g.fillStyle='#6aa89c'; g.fillRect(0,0,w,110); g.fillStyle='#fff'; g.textAlign='center'; g.font=`800 40px ${FONT}`; g.fillText('กฎความปลอดภัย',w/2,52); g.font=`700 28px ${FONT}`; g.fillText('ห้องปฏิบัติการ',w/2,92);
+    g.textAlign='left'; g.fillStyle='#3a2a1d'; g.font=`600 27px ${FONT}`;
+    ['1. สวมเสื้อกาวน์และ PPE ทุกครั้ง','2. สวมแว่นตานิรภัยเมื่อใช้สารเคมี','3. ห้ามกินดื่มในห้อง Lab','4. รู้ตำแหน่งที่ล้างตาและฝักบัว','5. รู้ตำแหน่งถังดับเพลิงและทางออก','6. อ่าน SDS ก่อนใช้สารเคมี','7. รายงานอุบัติการณ์ทุกครั้ง'].forEach((s,i)=>g.fillText(s,30,170+i*70)); });
+  rbox(0.78,1.0,0.03,trimM,-0.2,1.75,-4.985,null,0.01);
+  const pm=new THREE.Mesh(new THREE.PlaneGeometry(0.7,0.92),new THREE.MeshBasicMaterial({map:poster})); pm.position.set(-0.2,1.75,-4.965); scene.add(pm);
+  // shelves
+  [-1.17,1.17].forEach(s=>rbox(0.07,2.0,0.45,woodM,2.0+s,1.0,-4.75,null,0.025)); [0.4,0.9,1.4,1.95].forEach(y=>rbox(2.4,0.04,0.45,woodM,2.0,y,-4.75,null,0.015));
+  [0.42,0.92,1.42].forEach(y=>{ for(let i=0;i<8;i++) bottle(1.05+i*0.27,y,-4.75,glassC[(i+Math.round(y*3))%glassC.length],0.17+Math.random()*0.1,0.05+Math.random()*0.02); });
+  addObs(2.0,-4.75,2.45,0.5);
+  // spill kit (back-right corner)
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.5,0.7,0.5,mat(0xf2c94c),6.4,0.35,-4.6,g,0.05); rbox(0.54,0.07,0.54,mat(0x4a4f57),6.4,0.73,-4.6,g,0.03);
+    sign(['CHEMICAL','SPILL KIT'],'#f2c94c','#3a2a1d',0.4,0.3,6.4,0.42,-4.343,0,null,g);
+    reg(g,'spill','ชุดจัดการสารเคมีหก (Spill kit)',6.4,-3.85); addObs(6.4,-4.6,0.5,0.5); })();
+  // potted plant
+  (function(x,z){ cyl(0.2,0.16,0.35,mat(0xc0825a),x,0.175,z); [[0,0.6,0,0.25],[0.12,0.75,0.05,0.18],[-0.1,0.78,-0.05,0.2]].forEach(([a,b,c,r])=>{ const m=new THREE.Mesh(new THREE.IcosahedronGeometry(r,1),mat(0x6fae4f)); m.position.set(x+a,b,z+c); m.castShadow=true; scene.add(m); }); addObs(x,z,0.4,0.4); })(6.4,4.4);
+
+  // ---------- left wall ----------
+  // sink
+  rbox(0.8,0.86,1.4,cabM,-6.6,0.43,2.2,null,0.05); rbox(0.84,0.05,1.44,mat(0xd5dbe0,{metalness:0.4,roughness:0.35}),-6.6,0.885,2.2,null,0.02);
+  const basin=rbox(0.5,0.02,0.7,mat(0x9aa4ab,{metalness:0.5,roughness:0.3}),-6.55,0.915,2.2,null,0.008); basin.castShadow=false;
+  cyl(0.022,0.022,0.32,stl,-6.88,1.08,2.2); const arm=cyl(0.016,0.016,0.24,stl,-6.77,1.23,2.2); arm.rotation.z=Math.PI/2;
+  const sinkG=new THREE.Group(); scene.add(sinkG); const sinkHit=box(0.82,1,1.42,new THREE.MeshBasicMaterial({visible:false}),-6.6,0.6,2.2,sinkG); sinkHit.castShadow=false;
+  sign(['อ่างล้างมือ','HAND WASH'],'#3d7cc9','#ffffff',0.6,0.25,-6.985,1.65,2.2,Math.PI/2,null,sinkG);
+  reg(sinkG,'sink','อ่างล้างมือ',-5.6,2.2); addObs(-6.6,2.2,0.8,1.4);
+  // fire extinguisher
+  (function(){ const g=new THREE.Group(); scene.add(g); cyl(0.09,0.09,0.5,mat(0xd63a3a,{roughness:0.45}),-6.84,0.55,-2.1,g); cyl(0.03,0.03,0.08,mat(0x33373d),-6.84,0.84,-2.1,g);
+    rbox(0.06,0.04,0.2,mat(0x33373d),-6.84,0.92,-2.1,g,0.015); rbox(0.04,0.07,0.26,mat(0x4a4f57),-6.96,0.7,-2.1,g,0.015);
+    sign(['ถังดับเพลิง CO₂','FIRE EXTINGUISHER'],'#d63a3a','#ffffff',0.7,0.3,-6.985,1.6,-2.1,Math.PI/2,flameIcon,g);
+    reg(g,'ext','ถังดับเพลิง CO₂',-6.0,-2.1); })();
+  // chemical waste
+  rbox(0.4,0.55,0.35,mat(0xf2a33c),-6.65,0.275,-3.2,null,0.05); sign(['ขยะสารเคมี'],'#f2a33c','#3a2a1d',0.3,0.1,-6.445,0.42,-3.2,Math.PI/2); addObs(-6.65,-3.2,0.4,0.4);
+  // SDS shelf
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.45,1.1,0.9,woodM,-6.75,0.55,3.9,g,0.04);
+    [0xf2c94c,0xd65a4a,0x4a8fd6].forEach((c,i)=>rbox(0.3,0.32,0.07,mat(c),-6.75,1.26,3.65+i*0.12,g,0.015));
+    sign(['SDS','ข้อมูลความปลอดภัยสารเคมี'],'#f2c94c','#3a2a1d',0.7,0.3,-6.985,1.85,3.9,Math.PI/2,null,g);
+    reg(g,'sds','แฟ้ม SDS (เอกสารข้อมูลความปลอดภัย)',-5.8,3.9); addObs(-6.75,3.9,0.45,0.9); })();
+
+  // ---------- eyewash (random: left wall A or back wall B) ----------
+  (function(){
+    const A=S.side==='A', sx=A?-6.72:5.4, sz=A?-0.8:-4.72;
+    const g=new THREE.Group(); eyewashG=g; g.position.set(sx,0,sz); g.rotation.y=A?Math.PI/2:0; scene.add(g);
+    const yel=mat(0xf2c200,{roughness:0.5}), grn=mat(0x2fa35a,{roughness:0.45});
+    cyl(0.15,0.19,0.05,yel,0,0.025,0,g); cyl(0.05,0.05,0.86,yel,0,0.45,0,g);
+    cyl(0.22,0.12,0.11,grn,0,0.92,0.05,g);
+    [-0.07,0.07].forEach(x=>{ cyl(0.028,0.028,0.07,mat(0xfaf6ef),x,1.0,0.05,g); cyl(0.034,0.034,0.012,mat(0xf2c200),x,1.04,0.05,g); });
+    const lv=rbox(0.24,0.04,0.04,yel,0.28,0.93,0.05,g,0.015); lv.rotation.y=0.25; rbox(0.05,0.16,0.09,yel,0.4,0.93,0.09,g,0.02);
+    const pipe=cyl(0.03,0.03,0.3,stl,0,0.9,-0.13,g); pipe.rotation.x=Math.PI/2;
+    sign(['ที่ล้างตาฉุกเฉิน','EYE WASH'],'#2fa35a','#ffffff',0.72,0.42,0,1.75,-0.265,0,eyeIcon,g);
+    const pl=new THREE.PointLight(0x55ff99,0.5,2.4); pl.position.set(0,1.6,0.3); g.add(pl);
+    const wm=new THREE.MeshBasicMaterial({color:0xa5dcff,transparent:true,opacity:0.65});
+    [-0.07,0.07].forEach(x=>{ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.025,0.2,10),wm); w.position.set(x,1.14,0.05); w.userData.noPick=true; w.visible=false; g.add(w); waterMeshes.push(w); });
+    reg(g,'eyewash','ที่ล้างตาฉุกเฉิน (Eyewash)',A?-5.8:5.4,A?-0.8:-3.8); addObs(sx,sz,0.5,0.5);
+  })();
+  // safety shower (back wall)
+  (function(){ const g=new THREE.Group(); g.position.set(4.1,0,-4.75); scene.add(g);
+    const grn=mat(0x2fa35a,{roughness:0.45}), yel=mat(0xf2c200);
+    cyl(0.16,0.2,0.05,yel,0,0.025,0,g); cyl(0.04,0.04,2.4,grn,0,1.2,0,g);
+    const armS=cyl(0.03,0.03,0.5,grn,0,2.35,0.25,g); armS.rotation.x=Math.PI/2; cyl(0.22,0.12,0.1,grn,0,2.3,0.5,g);
+    cyl(0.008,0.008,0.8,stl,0,1.9,0.42,g); const tri=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.014,8,3),yel); tri.position.set(0,1.45,0.42); g.add(tri);
+    sign(['ฝักบัวฉุกเฉิน','SAFETY SHOWER'],'#2fa35a','#ffffff',0.7,0.36,0.62,1.75,-0.235,0,showerIcon,g);
+    reg(g,'shower','ฝักบัวฉุกเฉิน (Safety shower)',4.1,-3.8); addObs(4.1,-4.75,0.6,0.6); })();
+
+  // ---------- door (front, in the low wall) ----------
+  (function(){ const g=new THREE.Group(); scene.add(g);
+    [-5.12,-4.08].forEach(x=>rbox(0.16,2.3,0.32,trimM,x,1.15,5.13,g,0.04)); rbox(1.3,0.2,0.34,trimM,-4.6,2.32,5.13,g,0.05);
+    const leaf=new THREE.Group(); leaf.position.set(-5.02,0,5.3); leaf.rotation.y=-1.25; g.add(leaf);
+    rbox(0.9,2.05,0.06,mat(0x9fc9c0),0.45,1.04,0,leaf,0.03); rbox(0.35,0.5,0.07,mat(0xd9eff2,{transparent:true,opacity:0.7}),0.45,1.5,0,leaf,0.02);
+    const ex1=sign(['ทางออก','EXIT'],'#2fa35a','#ffffff',0.6,0.24,-4.6,2.05,5.32,0,exitIcon,g); const ex2=sign(['ทางออก','EXIT'],'#2fa35a','#ffffff',0.6,0.24,-4.6,2.05,4.95,Math.PI,exitIcon,g);
+    reg(g,'door','ประตูทางออก (ไปพบแพทย์)',-4.6,4.3); })();
+  // walk ring
+  ring=new THREE.Mesh(new THREE.RingGeometry(0.18,0.25,32),new THREE.MeshBasicMaterial({color:0x6fb3a3,transparent:true,opacity:0}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=0.012; ring.userData.noPick=true; scene.add(ring);
+}
+const CENTERS={};
+function centerOf(id){ if(!CENTERS[id]){ const b=new THREE.Box3().setFromObject(INTER[id].obj); CENTERS[id]=b.getCenter(new THREE.Vector3()); } return CENTERS[id]; }
+
+/* ================= NAV GRID ================= */
+const CELL=0.2, GX=70, GZ=50, grid=new Uint8Array(GX*GZ);
+function buildGrid(){
+  for(let i=0;i<GX;i++)for(let j=0;j<GZ;j++){
+    const x=-7+(i+0.5)*CELL, z=-5+(j+0.5)*CELL; let b=x<-6.6||x>6.6||z<-4.6||z>4.6;
+    if(!b) for(const o of OBS){ if(x>o.minX-0.3&&x<o.maxX+0.3&&z>o.minZ-0.3&&z<o.maxZ+0.3){b=true;break;} }
+    grid[i+j*GX]=b?1:0;
+  }
+}
+const cellOf=(x,z)=>[Math.floor((x+7)/CELL),Math.floor((z+5)/CELL)];
+const cellC=(i,j)=>[-7+(i+0.5)*CELL,-5+(j+0.5)*CELL];
+function freeIJ(i,j){ return i>=0&&j>=0&&i<GX&&j<GZ&&!grid[i+j*GX]; }
+function freeXZ(x,z){ const c=cellOf(x,z); return freeIJ(c[0],c[1]); }
+function nearestFree(i,j){ if(freeIJ(i,j)) return [i,j]; for(let r=1;r<20;r++){ let best=null,bd=1e9; for(let di=-r;di<=r;di++)for(let dj=-r;dj<=r;dj++){ if(Math.max(Math.abs(di),Math.abs(dj))!==r) continue; if(freeIJ(i+di,j+dj)){ const d=di*di+dj*dj; if(d<bd){bd=d;best=[i+di,j+dj];} } } if(best) return best; } return null; }
+function lineFree(a,b){ const d=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.ceil(d/0.08); for(let k=1;k<=n;k++){ const u=k/n; if(!freeXZ(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u)) return false; } return true; }
+const DIRS=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function findPath(sx,sz,tx,tz){
+  let s=nearestFree(...cellOf(sx,sz)), g=nearestFree(...cellOf(tx,tz)); if(!s||!g) return null;
+  const N=GX*GZ, si=s[0]+s[1]*GX, gi=g[0]+g[1]*GX;
+  const gs=new Float32Array(N).fill(Infinity), f=new Float32Array(N).fill(Infinity), came=new Int32Array(N).fill(-1), closed=new Uint8Array(N);
+  const h=n=>Math.hypot((n%GX)-g[0],((n/GX)|0)-g[1]);
+  gs[si]=0; f[si]=h(si); const open=[si];
+  while(open.length){
+    let bi=0; for(let k=1;k<open.length;k++) if(f[open[k]]<f[open[bi]]) bi=k;
+    const cur=open[bi]; open[bi]=open[open.length-1]; open.pop();
+    if(cur===gi) break; if(closed[cur]) continue; closed[cur]=1;
+    const ci=cur%GX, cj=(cur/GX)|0;
+    for(const [di,dj] of DIRS){ const ni=ci+di,nj=cj+dj; if(!freeIJ(ni,nj)) continue; const n=ni+nj*GX; if(closed[n]) continue;
+      if(di&&dj&&(!freeIJ(ci+di,cj)||!freeIJ(ci,cj+dj))) continue;
+      const ng=gs[cur]+(di&&dj?1.4142:1); if(ng<gs[n]){ gs[n]=ng; came[n]=cur; f[n]=ng+h(n); open.push(n); } }
+  }
+  if(si!==gi && came[gi]===-1) return null;
+  const cells=[]; let c=gi; while(c!==-1&&c!==si){ cells.push(c); c=came[c]; } cells.reverse();
+  const pts=cells.map(n=>cellC(n%GX,(n/GX)|0));
+  if(freeXZ(tx,tz)) { if(pts.length) pts[pts.length-1]=[tx,tz]; else pts.push([tx,tz]); }
+  // string pulling
+  const out=[]; let cur=[sx,sz], k=0;
+  while(k<pts.length){ let far=k; for(let m=pts.length-1;m>k;m--){ if(lineFree(cur,pts[m])){ far=m; break; } } out.push(pts[far]); cur=pts[far]; k=far+1; }
+  return out;
+}
+
+/* ================= INPUT ================= */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+function pick(cx,cy){ const r=canvas.getBoundingClientRect(); ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1); ray.setFromCamera(ndc,camera);
+  const hits=ray.intersectObjects(scene.children,true); for(const h of hits){ if(h.object.userData.noPick||h.object.isSprite||h.object.isInstancedMesh) continue; { let o=h.object, vis=true; while(o){ if(!o.visible){ vis=false; break; } o=o.parent; } if(!vis) continue; } if(h.object.material&&h.object.material.visible===false&&!idOf(h.object)) continue; return h; } return null; }
+function idOf(o){ while(o){ if(o.userData&&o.userData.id) return o.userData.id; o=o.parent; } return null; }
+const active=()=>!S.ui&&(S.phase==='pre'||S.phase==='emergency');
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let down=null; const ptrs=new Map(); let pinch0=null;
+canvas.addEventListener('pointerdown',e=>{ if(S.phase==='done'||S.phase==='intro'||$('#modal').classList.contains('show')) return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+  if(ptrs.size===2){ const [a,b]=[...ptrs.values()]; pinch0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,dist:CAM.dist}; down=null; return; }
+  down={x:e.clientX,y:e.clientY,yaw:CAM.yaw,pitch:CAM.pitch,drag:false}; });
+canvas.addEventListener('pointermove',e=>{
+  if(ptrs.has(e.pointerId)) ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch0&&ptrs.size===2){ const [a,b]=[...ptrs.values()]; CAM.dist=clamp(pinch0.dist*pinch0.d/(Math.hypot(a.x-b.x,a.y-b.y)||1),6,18); return; }
+  if(down){ const dx=e.clientX-down.x, dy=e.clientY-down.y; if(!down.drag&&Math.hypot(dx,dy)>6) down.drag=true;
+    if(down.drag){ CAM.yaw=clamp(down.yaw-dx*0.005,0.2,1.38); CAM.pitch=clamp(down.pitch+dy*0.004,0.6,1.25); $('#tooltip').style.display='none'; } return; }
+  if(!active()||e.pointerType==='touch'){ $('#tooltip').style.display='none'; return; }
+  const h=pick(e.clientX,e.clientY), id=h&&idOf(h.object), tt=$('#tooltip');
+  if(id){ tt.textContent=INTER[id].name; tt.style.display='block'; tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY+14)+'px'; canvas.style.cursor='pointer'; }
+  else { tt.style.display='none'; canvas.style.cursor=h?'crosshair':'grab'; }
+});
+function ptrEnd(e){ ptrs.delete(e.pointerId); if(ptrs.size<2) pinch0=null; }
+canvas.addEventListener('pointerup',e=>{ const wasPinch=!!pinch0; ptrEnd(e); const d=down; down=null; if(wasPinch||!d||d.drag||!active()) return; onClick(e.clientX,e.clientY); });
+canvas.addEventListener('pointercancel',e=>{ ptrEnd(e); down=null; });
+canvas.addEventListener('wheel',e=>{ e.preventDefault(); CAM.dist=clamp(CAM.dist+e.deltaY*0.01,6,18); },{passive:false});
+function onClick(cx,cy){ const h=pick(cx,cy); if(!h) return; const id=idOf(h.object); if(id){ goInteract(id); return; } walkTo(h.point.x,h.point.z,null); }
+function walkTo(x,z,pendingId){
+  const path=findPath(P.x,P.z,x,z); P.pending=pendingId; if(!path||!path.length){ if(pendingId) arrive(); return; }
+  P.path=path; const last=path[path.length-1]; ring.position.x=last[0]; ring.position.z=last[1]; ring.material.opacity=0.95;
+}
+function goInteract(id){ const it=INTER[id]; if(Math.hypot(P.x-it.ax,P.z-it.az)<0.35){ P.pending=id; arrive(); } else walkTo(it.ax,it.az,id); }
+function arrive(){ const id=P.pending; P.pending=null; if(!id) return; const o=centerOf(id);
+  P.yawT=Math.atan2(o.x-P.x,o.z-P.z); setTimeout(()=>{ if(S.phase==='pre'||S.phase==='emergency') interact(id); },200); }
+const keys={};
+addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT') return; keys[e.code]=true;
+  if(e.code==='Space'){ e.preventDefault(); if(S.phase==='flushing') setHold(true); } });
+addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='Space') setHold(false); });
+addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; setHold(false); });
+addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); });
+
+/* ================= CHARACTERS ================= */
+const BLACK=new THREE.MeshBasicMaterial({color:0x1d1a1f});
+function spriteTex(text,bg,fg,bubble){ const w=512,h=bubble?150:96;
+  return canvasTex(w,h,(g)=>{ const r=bubble?34:44, bh=bubble?h-30:h; g.fillStyle=bg; g.strokeStyle='#c58d5d'; g.lineWidth=7;
+    g.beginPath(); g.moveTo(r+3,3); g.arcTo(w-3,3,w-3,bh-3,r); g.arcTo(w-3,bh-3,3,bh-3,r); g.arcTo(3,bh-3,3,3,r); g.arcTo(3,3,w-3,3,r); g.closePath(); g.fill(); g.stroke();
+    if(bubble){ g.beginPath(); g.moveTo(w/2-20,bh-4); g.lineTo(w/2,h-4); g.lineTo(w/2+20,bh-4); g.closePath(); g.fill(); g.stroke(); g.fillRect(w/2-17,bh-10,34,9); }
+    g.fillStyle=fg; g.textAlign='center'; g.textBaseline='middle'; let size=bubble?46:50; g.font=`500 ${size}px Mitr, ${FONT}`;
+    while(g.measureText(text).width>w-60&&size>16){ size-=2; g.font=`500 ${size}px Mitr, ${FONT}`; } g.fillText(text,w/2,bh/2+3); }); }
+function makeSprite(text,bg,fg,w,h,bubble){ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:spriteTex(text,bg,fg,bubble),depthTest:false,transparent:true,toneMapped:false}));
+  sp.scale.set(w,h,1); sp.renderOrder=20; sp.userData={noPick:true,text,bg,fg,bubble}; return sp; }
+function setSprite(sp,text){ if(sp.userData.text===text) return; sp.userData.text=text; const old=sp.material.map; sp.material.map=spriteTex(text,sp.userData.bg,sp.userData.fg,sp.userData.bubble); sp.material.needsUpdate=true; if(old) old.dispose(); }
+function say(C,text,sec){ setSprite(C.bubble,text); C.bubble.visible=true; C.bubbleT=sec||2.5; }
+function makeChar(o){
+  const C={ph:0,blinkT:1+Math.random()*3,override:null,overT:0,shakeT:0,bubbleT:0};
+  const root=new THREE.Group(); root.scale.setScalar(0.75); scene.add(root); C.root=root;
+  const body=new THREE.Group(); root.add(body); C.body=body;
+  const mk=(geo,m,x,y,z,p)=>{ const me=new THREE.Mesh(geo,m); me.position.set(x,y,z); me.castShadow=true; me.receiveShadow=true; me.userData.noPick=true; p.add(me); return me; };
+  const skin=mat(o.skin,{roughness:0.62}), hairM=mat(o.hair,{roughness:0.5}), coatM=mat(o.coat,{roughness:0.85}), shirtM=mat(o.shirt,{roughness:0.8}),
+        pantsM=mat(o.pants,{roughness:0.85}), shoeM=mat(o.shoe,{roughness:0.45}), gloveM=mat(o.glove,{roughness:0.4});
+  C.shirtM=shirtM;
+  // legs (hip → knee → foot)
+  C.legs=[]; C.knees=[];
+  [-1,1].forEach(s=>{ const hip=new THREE.Group(); hip.position.set(s*0.09,0.92,0); body.add(hip);
+    mk(new THREE.CapsuleGeometry(0.068,0.3,4,12),pantsM,0,-0.21,0,hip);
+    const knee=new THREE.Group(); knee.position.y=-0.43; hip.add(knee);
+    mk(new THREE.CapsuleGeometry(0.056,0.3,4,12),pantsM,0,-0.2,0,knee);
+    const sh=mk(new THREE.SphereGeometry(0.06,16,12),shoeM,0,-0.43,0.035,knee); sh.scale.set(1,0.62,1.75);
+    C.legs.push(hip); C.knees.push(knee); });
+  mk(new THREE.SphereGeometry(0.15,18,14),pantsM,0,0.92,0,body).scale.set(1.12,0.75,0.85);
+  // torso
+  const torso=new THREE.Group(); torso.position.y=0.95; body.add(torso); C.torso=torso;
+  mk(new THREE.CapsuleGeometry(0.15,0.26,6,16),shirtM,0,0.25,0,torso).scale.set(1.12,1,0.78);
+  mk(new THREE.CylinderGeometry(0.045,0.05,0.1,12),skin,0,0.58,0,torso);
+  // lab coat (open front, knee length)
+  const coat=new THREE.Group(); torso.add(coat); C.coat=coat;
+  const prof=[[0.245,-0.5],[0.232,-0.3],[0.205,-0.05],[0.195,0.15],[0.2,0.33],[0.185,0.45],[0.13,0.53],[0.07,0.565]].map(a=>new THREE.Vector2(a[0],a[1]));
+  const cm=coatM.clone(); cm.side=THREE.DoubleSide;
+  mk(new THREE.LatheGeometry(prof,32,0.22,Math.PI*2-0.44),cm,0,0,0,coat).scale.set(1.12,1,0.82);
+  [-1,1].forEach(s=>{ const lp=mk(new THREE.BoxGeometry(0.055,0.2,0.012),coatM,s*0.055,0.42,0.152,coat); lp.rotation.z=-s*0.38; lp.rotation.y=s*0.25; });
+  const pk=mk(new THREE.BoxGeometry(0.08,0.075,0.01),coatM,-0.11,0.3,0.148,coat); pk.rotation.y=-0.55;
+  [0,1].forEach(i=>{ const pen=mk(new THREE.CylinderGeometry(0.006,0.006,0.07,8),mat(i?0x1e3a8a:0x111827),-0.125+i*0.018,0.35,0.145-i*0.01,coat); pen.rotation.y=-0.55; });
+  const bd=mk(new THREE.BoxGeometry(0.05,0.07,0.006),mat(0xffffff,{roughness:0.4}),0.11,0.3,0.15,coat); bd.rotation.y=0.55;
+  const bds=mk(new THREE.BoxGeometry(0.05,0.016,0.007),mat(o.badge),0.11,0.325,0.151,coat); bds.rotation.y=0.55;
+  [-1,1].forEach(s=>{ const lp=mk(new THREE.BoxGeometry(0.11,0.1,0.01),coatM,s*0.165,-0.2,0.135,coat); lp.rotation.y=s*0.65; });
+  // arms (shoulder → elbow → gloved hand)
+  C.arms=[]; C.elbows=[]; C.armMeshes=[];
+  [-1,1].forEach(s=>{ const sh=new THREE.Group(); sh.position.set(s*0.205,0.47,0); torso.add(sh);
+    C.armMeshes.push(mk(new THREE.SphereGeometry(0.062,14,10),coatM,0,0,0,sh));
+    C.armMeshes.push(mk(new THREE.CapsuleGeometry(0.05,0.2,4,12),coatM,0,-0.14,0,sh));
+    const el=new THREE.Group(); el.position.y=-0.29; sh.add(el);
+    C.armMeshes.push(mk(new THREE.CapsuleGeometry(0.043,0.17,4,12),coatM,0,-0.12,0,el));
+    { const hd=mk(new THREE.SphereGeometry(0.042,14,10),gloveM,0,-0.26,0.005,el); hd.scale.set(0.8,1.15,0.6); (C.hands||(C.hands=[])).push(hd); C.gloveM=gloveM; C.skinM=skin; C.coatM=coatM; }
+    C.arms.push(sh); C.elbows.push(el); });
+  // head
+  const head=new THREE.Group(); head.position.y=0.84; head.scale.setScalar(2.4); torso.add(head); C.head=head;
+  mk(new THREE.SphereGeometry(0.105,28,20),skin,0,0,0,head).scale.set(0.9,1.08,0.98);
+  [-1,1].forEach(s=>mk(new THREE.SphereGeometry(0.022,10,8),skin,s*0.094,0,0,head).scale.set(0.5,1,0.8));
+  mk(new THREE.SphereGeometry(0.013,10,8),skin,0,-0.008,0.104,head).scale.set(0.8,1,0.9);
+  const cap=mk(new THREE.SphereGeometry(0.113,28,18,0,Math.PI*2,0,Math.PI*0.55),hairM,0,0.006,-0.004,head); cap.rotation.x=-0.42; cap.scale.set(0.96,1.05,1.03);
+  if(o.ponytail){ const pt=new THREE.Group(); pt.position.set(0,0.03,-0.1); pt.rotation.x=0.4; head.add(pt);
+    mk(new THREE.TorusGeometry(0.018,0.006,6,12),mat(0x1f2937),0,0,0,pt).rotation.x=Math.PI/2;
+    mk(new THREE.CapsuleGeometry(0.028,0.11,4,10),hairM,0,-0.08,-0.01,pt); }
+  else mk(new THREE.SphereGeometry(0.09,16,10),hairM,0,0.06,-0.012,head).scale.set(1.1,0.55,1.15);
+  [-1,1].forEach(s=>{ const ck=mk(new THREE.CircleGeometry(0.016,14),new THREE.MeshBasicMaterial({color:0xf3a3a3,transparent:true,opacity:0.55}),s*0.062,-0.022,0.09,head); ck.rotation.y=s*0.55; ck.castShadow=false; });
+  C.eyesN=new THREE.Group(); head.add(C.eyesN);
+  [-1,1].forEach(s=>{ mk(new THREE.SphereGeometry(0.013,10,8),BLACK,s*0.036,0.006,0.094,C.eyesN).scale.set(0.9,1.3,0.6); mk(new THREE.SphereGeometry(0.0035,6,5),new THREE.MeshBasicMaterial({color:0xffffff}),s*0.036+0.004,0.012,0.1,C.eyesN); });
+  C.brows=[-1,1].map(s=>mk(new THREE.BoxGeometry(0.03,0.006,0.008),hairM,s*0.037,0.037,0.096,head));
+  C.eyesH=new THREE.Group(); C.eyesH.visible=false; head.add(C.eyesH);
+  [-1,1].forEach(s=>[1,-1].forEach(k=>{ const b=mk(new THREE.BoxGeometry(0.022,0.004,0.006),BLACK,s*0.036,0.012+k*0.004,0.097,C.eyesH); b.rotation.z=k*s*0.4; }));
+  C.mouthN=mk(new THREE.TorusGeometry(0.012,0.0028,6,12,Math.PI),BLACK,0,-0.04,0.094,head); C.mouthN.rotation.z=Math.PI;
+  C.mouthH=mk(new THREE.SphereGeometry(0.012,10,8),new THREE.MeshBasicMaterial({color:0x5a2330}),0,-0.048,0.092,head); C.mouthH.scale.set(1.2,0.8,0.5); C.mouthH.visible=false;
+  const tearM=new THREE.MeshBasicMaterial({color:0x9fd6ff,transparent:true,opacity:0.85});
+  C.tears=[-1,1].map(s=>{ const t=mk(new THREE.SphereGeometry(0.0075,8,6),tearM,s*0.042,0,0.094,head); t.visible=false; t.castShadow=false; return t; });
+  // safety glasses: pushed up on head (player) or worn properly (NPC)
+  if(o.glasses){ const gg=new THREE.Group(); head.add(gg);
+    if(o.glasses==='up'){ gg.position.set(0,0.088,0.05); gg.rotation.x=-1.0; } else { gg.position.set(0,0.014,0.103); }
+    const fr=mat(0x374151,{roughness:0.4}), ln=mat(0xcfe8ff,{roughness:0.05,transparent:true,opacity:0.35,metalness:0.1});
+    mk(new THREE.BoxGeometry(0.13,0.01,0.008),fr,0,0.017,0,gg);
+    [-1,1].forEach(s=>{ mk(new THREE.BoxGeometry(0.056,0.034,0.004),ln,s*0.031,0,0,gg); mk(new THREE.BoxGeometry(0.006,0.008,0.1),fr,s*0.064,0.014,-0.05,gg); });
+    C.glasses=gg; }
+  C.tag=makeSprite(o.tag,'#fff6e6','#6b3f22',0.75,0.14,false); C.tag.position.y=2.3; root.add(C.tag);
+  C.bubble=makeSprite(' ','#fffaf0','#4a2f1d',2.0,0.59,true); C.bubble.position.y=2.68; C.bubble.visible=false; root.add(C.bubble);
+  return C;
+}
+function L(o,p,v,k){ o[p]+=(v-o[p])*k; }
+function animChar(C,dt,time,moving,state,expr){
+  const k=Math.min(1,dt*10);
+  if(moving) C.ph+=dt*8.5;
+  const sw=moving?Math.sin(C.ph):0, cw=moving?Math.cos(C.ph):0;
+  C.body.position.y=moving?Math.abs(cw)*0.022-0.01:0;
+  C.torso.scale.y=1+(moving?0:Math.sin(time*1.8)*0.006);
+  const FACE=s=>({x:-1.67,z:-s*0.25,e:-1.55});
+  let A=[{x:-sw*0.4,z:-0.07,e:moving?-0.35:-0.12},{x:sw*0.4,z:0.07,e:moving?-0.35:-0.12}];
+  let lean=0, headX=0, shake=0, knee=[moving?0.08+0.55*Math.max(0,cw):0.02, moving?0.08+0.55*Math.max(0,-cw):0.02], brow=0;
+  switch(state){
+    case 'hurt': A=moving?[{x:-1.1,z:-0.1,e:-0.25},FACE(1)]:[FACE(-1),FACE(1)]; headX=0.2; brow=0.35; break;
+    case 'flush': lean=0.85; headX=-0.15; knee=[0.25,0.25]; A=S.lidsOpen?[FACE(-1),FACE(1)]:[{x:-0.9,z:0.15,e:-0.4},{x:-0.9,z:-0.15,e:-0.4}]; brow=0.25; break;
+    case 'rub': { const r=Math.sin(time*26)*0.12; A=[{x:-1.67,z:0.25+r,e:-1.55},{x:-1.67,z:-0.25-r,e:-1.55}]; shake=0.01; brow=0.35; break; }
+    case 'help': A=[{x:-1.55,z:0.4,e:-1.45},{x:-1.55,z:-0.4,e:-1.45}]; headX=-0.25; brow=0.3; break;
+    case 'pour': A=[{x:-0.6,z:0.1,e:-0.6},{x:-1.0,z:-0.15,e:-0.5}]; lean=0.12; break;
+    case 'point': A[1]={x:-1.45,z:0.05,e:-0.08}; break;
+  }
+  if(C.shakeT>0){ C.shakeT-=dt; shake=0.035; }
+  L(C.legs[0].rotation,'x',sw*0.5,k); L(C.legs[1].rotation,'x',-sw*0.5,k);
+  L(C.knees[0].rotation,'x',knee[0],k); L(C.knees[1].rotation,'x',knee[1],k);
+  for(let i=0;i<2;i++){ L(C.arms[i].rotation,'x',A[i].x,k); L(C.arms[i].rotation,'z',A[i].z,k); L(C.elbows[i].rotation,'x',A[i].e,k); }
+  L(C.torso.rotation,'x',lean,k); L(C.head.rotation,'x',headX,k);
+  C.body.rotation.z=shake?Math.sin(time*40)*shake:C.body.rotation.z*0.8;
+  const hurt=expr==='hurt';
+  C.eyesN.visible=!hurt; C.eyesH.visible=hurt; C.mouthN.visible=!hurt; C.mouthH.visible=hurt;
+  C.brows.forEach((b,i)=>L(b.rotation,"z",(i?-1:1)*(hurt?(brow||0.3):0),k));
+  C.tears.forEach((t,i)=>{ t.visible=hurt; if(hurt){ const u=(time*1.2+i*0.5)%1; t.position.y=0.0-u*0.07; t.position.z=0.096-u*0.008; t.scale.setScalar(1-u*0.5); } });
+  if(!hurt){ C.blinkT-=dt; C.eyesN.scale.y=C.blinkT<0.12?0.15:1; if(C.blinkT<0) C.blinkT=2+Math.random()*3; }
+}
+function removeCoat(C){ C.coat.visible=false; C.armMeshes.forEach(a=>a.material=C.shirtM); }
+/* particles */
+const PGEO=new THREE.SphereGeometry(1,8,6), PMATS={}, parts=[];
+function spawn(x,y,z,vx,vy,vz,color,life,size,grav){ const m=new THREE.Mesh(PGEO,PMATS[color]||(PMATS[color]=new THREE.MeshBasicMaterial({color})));
+  m.position.set(x,y,z); m.scale.setScalar(size); m.userData={noPick:true,v:new THREE.Vector3(vx,vy,vz),life,max:life,size,grav:grav==null?6:grav}; scene.add(m); parts.push(m); }
+function updateParticles(dt){ for(let i=parts.length-1;i>=0;i--){ const p=parts[i], d=p.userData; d.life-=dt;
+  if(d.life<=0){ scene.remove(p); parts.splice(i,1); continue; } d.v.y-=d.grav*dt; p.position.addScaledVector(d.v,dt); p.scale.setScalar(d.size*(0.35+0.65*d.life/d.max)); } }
+function burst(x,y,z,color,n,spd,size,grav,life){ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, e=Math.random()*0.8+0.2;
+  spawn(x,y,z,Math.cos(a)*spd*e,spd*(0.3+Math.random()*0.7),Math.sin(a)*spd*e,color,life||0.7,size,grav); } }
+let PC=null;
+const NPC={C:null,x:-4.6,z:4.2,yaw:Math.PI,yawT:null,path:[],active:false,repath:0,talkCd:0};
+function npcUpdate(dt,time){
+  const N=NPC; if(!N.C) return;
+  if(!N.active){ if(S.help&&!(S.mod!=='M3'&&G&&G.noNPC)&&(S.phase==='emergency'||S.phase==='flushing')){ N.active=true; N.C.root.visible=true; N.x=-4.6; N.z=7.6; N.path=[[-4.6,4.3]]; N.repath=2.8; N.talkCd=3; say(N.C,exam()?'เกิดอะไรขึ้น! พี่มาแล้ว':(S.mod==='M3'?'พี่มาแล้ว! อดทนนะ':'พี่มาช่วยแล้ว!'),2.5); } else return; }
+  if(S.phase==='done') return;
+  N.repath-=dt; N.talkCd-=dt; const d=Math.hypot(N.x-P.x,N.z-P.z);
+  if(N.repath<=0){ N.repath=0.8; if(d>1.6){ const ux=(N.x-P.x)/(d||1), uz=(N.z-P.z)/(d||1); const p=findPath(N.x,N.z,P.x+ux*1.0,P.z+uz*1.0); if(p) N.path=p; } else N.path=[]; }
+  const moving=moveAlong(N,dt,3.0); let st='idle';
+  if(!moving){ if(S.mod==='M3'&&!exam()&&S.eyewashT==null){ const e=INTER.eyewash; N.yawT=Math.atan2(e.ax-N.x,e.az-N.z); st='point'; } else N.yawT=Math.atan2(P.x-N.x,P.z-N.z); }
+  if(N.yawT!=null) N.yaw=lerpAng(N.yaw,N.yawT,1-Math.exp(-8*dt));
+  N.C.root.position.set(N.x,0,N.z); N.C.root.rotation.y=N.yaw;
+  if(N.talkCd<=0&&d<2.8){ let txt;
+    if(S.mod!=='M3') txt=exam()?'พี่อยู่ตรงนี้นะ':(G.npcText?G.npcText():'ทำตามขั้นตอนนะ'); else
+    if(exam()) txt=S.phase==='flushing'?'พี่อยู่ตรงนี้นะ':(S.flushDone?'พร้อมไปพบแพทย์เมื่อไหร่บอกนะ':'เป็นอะไรไหม!?');
+    else txt=S.eyewashT==null?'ที่ล้างตาอยู่ทางนั้น!':(S.phase==='flushing'&&!S.flushDone?'ล้างต่อเนื่องให้ครบ 15 นาทีนะ':(S.flushDone&&!S.sdsOk?'ดูชื่อสารใน SDS ไว้บอกหมอ':'เดี๋ยวพี่พาไปพบแพทย์นะ'));
+    say(N.C,txt,3); N.talkCd=5.5; }
+  animChar(N.C,dt,time,moving,st,'happy');
+}
+
+/* ================= MODAL ================= */
+function modal(title,html,buttons){ $('#mTitle').textContent=title; $('#mBody').innerHTML=html; const f=$('#mBtns'); f.innerHTML='';
+  buttons.forEach(b=>{ const e=document.createElement('button'); e.className='btn '+(b.cls||''); e.textContent=b.label; e.onclick=()=>{ closeModal(); b.onClick&&b.onClick(); }; f.appendChild(e); });
+  $('#modal').classList.add('show'); S.ui=true; $('#tooltip').style.display='none'; }
+function closeModal(){ $('#modal').classList.remove('show'); S.ui=S.phase==='flushing'; }
+const shuffle=a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* ================= SCENARIO LOGIC ================= */
+function briefing(){
+  modal('เริ่มงาน: เตรียมน้ำยา',
+    `<p>งานของคุณ: เท <b>${S.chem.name}</b> ปริมาตร 50 mL ลงบีกเกอร์เพื่อเตรียมน้ำยา</p>
+     <p>⚠️ วันนี้คุณรีบ จึง<b>ลืมสวมแว่นตานิรภัย</b> (ดันไว้บนศีรษะ ไม่ได้สวมปิดตา)${S.lens?' และคุณ<b>สวมคอนแทคเลนส์</b>อยู่':''}</p>
+     <p style="color:#9fb0bc;font-size:14px">เมื่อกดเริ่ม เวลาจะเริ่มนับ ระบบจะบันทึกทุกการกระทำของคุณ</p>`,
+    [{label:'▶ เริ่มเทสาร',cls:'pri',onClick:startPour},{label:'ขอสำรวจห้องก่อน',cls:'ghost'}]);
+}
+function startEmergency(){
+  S.phase='emergency'; S.t0=performance.now(); S.blurBase=2.4; puddle.visible=true; acidMat.emissiveIntensity=0;
+  const fl=$('#flash'); fl.style.transition='none'; fl.style.opacity='0.95'; requestAnimationFrame(()=>{ fl.style.transition='opacity 1.2s'; fl.style.opacity='0'; });
+  splashSound(); PC.shakeT=1.6;
+  log('เกิดเหตุ: '+S.chem.name+' กระเด็นเข้าตาทั้งสองข้าง','info');
+  toast(`💥 ${S.chem.short} กระเด็นเข้าตาทั้งสองข้าง! แสบตามาก มองเห็นไม่ชัด`,'crit',5500);
+  $('#actions').classList.add('show'); updateBtns();
+}
+function doHelp(){ if(S.help) return; S.help=true; S.helpT=t(); PC.override='help'; PC.overT=1.2; say(PC,'ช่วยด้วย! สารเคมีเข้าตา!',2.5); log('ตะโกนขอความช่วยเหลือ','ok','','MT 5.1.3.6');
+  fb('ok','📢 "ช่วยด้วย! สารเคมีเข้าตา!" — เพื่อนร่วมงานได้ยินและกำลังมาช่วย','📢 คุณตะโกนขอความช่วยเหลือ'); updateBtns(); }
+function doRub(){ crit('ขยี้ตา','การขยี้ตาทำให้สารฝังลึกและกระจกตาถลอกมากขึ้น ต้องรีบล้างด้วยน้ำเท่านั้น','MT 5.1.3.7'); S.blurBase=Math.min(S.blurBase+1.2,5); PC.override='rub'; PC.overT=1.3; }
+function doClothing(){ if(S.clothing) return; S.clothing=true; S.clothingT=t(); removeCoat(PC); burst(P.x,1.2,P.z,0xe5e7eb,14,1.2,0.04,1,0.6);
+  if(S.eyewashT==null){ log('ถอดเสื้อผ้าที่เปื้อนก่อนไปล้างตา','warn','เสียเวลา ควรไปล้างตาก่อน แล้วถอดระหว่างล้าง','MT 5.1.3.7'); fb('warn','ถอดเสื้อกาวน์แล้ว แต่ควรไปล้างตาก่อน (ถอดระหว่างล้างได้)','👕 คุณถอดเสื้อกาวน์ที่เปื้อนสาร'); }
+  else { log('ถอดเสื้อผ้า/เสื้อกาวน์ที่เปื้อนสาร','ok','','MT 5.1.3.7'); fb('ok','👕 ถอดเสื้อกาวน์ที่เปื้อนสารออกแล้ว','👕 คุณถอดเสื้อกาวน์ที่เปื้อนสาร'); }
+  updateBtns(); }
+function updateBtns(){ $('#aHelp').disabled=S.help; $('#helpBtn2').disabled=S.help; $('#aCloth').disabled=S.clothing; $('#clothBtn2').disabled=S.clothing;
+  $('#lensBtn').disabled=S.lensRemoved; $('#lensBtn').textContent=S.lensRemoved?'✓ ถอดคอนแทคเลนส์แล้ว':'ถอดคอนแทคเลนส์';
+  $('#lidsBtn').classList.toggle('on',S.lidsOpen); $('#lidsBtn').textContent=S.lidsOpen?'👁️ ถ่างเปลือกตา: กำลังทำ':'👁️ ถ่างเปลือกตา: ไม่ได้ทำ'; }
+$('#aHelp').onclick=doHelp; $('#helpBtn2').onclick=doHelp; $('#aRub').onclick=doRub; $('#aCloth').onclick=doClothing; $('#clothBtn2').onclick=doClothing;
+$('#aDoc').onclick=goDoctor;
+
+function interact(id){
+  if(S.mod!=='M3'){ interactG(id); return; }
+  const pre=S.phase==='pre', em=S.phase==='emergency', wasted=em&&!S.flushDone;
+  switch(id){
+  case 'acid':
+    if(pre) return briefing();
+    if(wasted){ log('กลับไปสนใจขวดสารก่อนล้างตา','warn','เสียเวลา','—'); fb('warn','อย่าเพิ่งสนใจขวดสาร ดวงตาสำคัญกว่า!','คุณอยู่ที่โต๊ะปฏิบัติการ'); }
+    break;
+  case 'eyewash':
+    if(pre){ toast('ที่ล้างตาฉุกเฉิน — ดีมากที่สำรวจตำแหน่งไว้ก่อนเริ่มงาน','info'); log('สำรวจตำแหน่งที่ล้างตาก่อนเริ่มงาน','info','','MT 5.1.3.2'); return; }
+    if(!em) return;
+    if(S.flushDone){ toast('คุณล้างตาครบ 15 นาทีแล้ว','info'); return; }
+    if(S.eyewashT==null){ S.eyewashT=t(); setFirst('eyewash'); const ok=S.eyewashT<=10;
+      log(`ไปถึงที่ล้างตาฉุกเฉิน (${S.eyewashT.toFixed(1)} วินาที)`,ok?'ok':'warn',ok?'ทันภายใน 10 วินาที':'เกิน 10 วินาที (เกณฑ์ ANSI Z358.1)','MT 5.1.3.2'); }
+    if(S.lever==null) leverModal(); else openFlush();
+    break;
+  case 'sink':
+    if(pre){ toast('อ่างล้างมือ','info'); return; }
+    if(wasted){ setFirst('sink'); log('ไปที่อ่างล้างมือแทนที่ล้างตา','warn','อ่างล้างมือไม่ใช่อุปกรณ์ล้างตาฉุกเฉิน','MT 5.1.3.2'); fb('warn','อ่างล้างมือไม่ใช่อุปกรณ์ล้างตาฉุกเฉิน น้ำไม่พุ่งเข้าตาทั้งสองข้างพร้อมกัน — หาที่ล้างตา!','คุณอยู่ที่อ่างล้างมือ'); }
+    break;
+  case 'shower':
+    if(pre){ toast('ฝักบัวฉุกเฉิน — สำหรับสารเคมีหกรดร่างกาย','info'); log('สำรวจตำแหน่งฝักบัวฉุกเฉิน','info','','MT 5.1.3.2'); return; }
+    if(wasted){ setFirst('shower'); log('ไปที่ฝักบัวฉุกเฉินแทนที่ล้างตา','warn','ฝักบัวเหมาะกับสารหกรดร่างกาย ดวงตาต้องใช้ที่ล้างตา','MT 5.1.3.2'); fb('warn','ฝักบัวฉุกเฉินใช้เมื่อสารหกรดร่างกาย สำหรับดวงตาต้องใช้ที่ล้างตาฉุกเฉิน','คุณอยู่ที่ฝักบัวฉุกเฉิน'); }
+    break;
+  case 'neutral':
+    if(pre){ toast('สารละลาย NaHCO₃ 5%','info'); return; }
+    if(em){ S.usedNeutral=true; crit('ใช้สารทำให้เป็นกลางล้างตา','ปฏิกิริยาสะเทินคายความร้อนและทำลายดวงตาเพิ่ม ให้ใช้น้ำสะอาดเท่านั้น','MT 5.1.3.7'); S.blurBase=Math.min(S.blurBase+1,5); }
+    break;
+  case 'sds':
+    if(pre){ toast('แฟ้ม SDS — ข้อมูลความปลอดภัยของสารเคมีทุกชนิดในห้อง','info'); log('สำรวจตำแหน่งแฟ้ม SDS','info','','MT 5.1.3.7'); return; }
+    if(em) sdsModal();
+    break;
+  case 'phone':
+    if(pre){ toast('โทรศัพท์แจ้งเหตุฉุกเฉิน — โทร 1111','info'); return; }
+    if(em&&!S.help){ S.help=true; S.helpT=t(); log('โทรแจ้งเหตุฉุกเฉินภายใน (1111)','ok','','MT 5.1.3.6'); fb('ok','☎️ แจ้งเหตุแล้ว ทีมช่วยเหลือกำลังมา — รีบไปล้างตา!','☎️ คุณโทรแจ้งเหตุ'); updateBtns(); }
+    else if(em) toast('แจ้งเหตุไปแล้ว','info');
+    break;
+  case 'firstaid':
+    if(pre){ toast('ชุดปฐมพยาบาล','info'); return; }
+    if(wasted){ setFirst('firstaid'); log('ไปหาชุดปฐมพยาบาลก่อนล้างตา','warn','สารเคมีเข้าตาต้องล้างด้วยน้ำทันที','MT 5.1.3.4'); fb('warn','ชุดปฐมพยาบาลช่วยไม่ได้ในขั้นนี้ ต้องล้างตาด้วยน้ำทันที','คุณเปิดชุดปฐมพยาบาล'); }
+    break;
+  case 'spill':
+    if(pre){ toast('ชุดจัดการสารเคมีหก (Chemical spill kit)','info'); return; }
+    if(wasted){ setFirst('spill'); log('ไปจัดการสารหกก่อนล้างตา','warn','ผู้บาดเจ็บต้องดูแลตัวเองก่อน','MT 5.1.3.2'); fb('warn','ผู้บาดเจ็บต้องล้างตาก่อน ให้ผู้ที่ผ่านการอบรมจัดการสารหกภายหลัง','คุณอยู่ที่ชุดจัดการสารหก'); }
+    else if(em) fb('info','ให้ผู้ที่ผ่านการอบรมจัดการสารหก ส่วนคุณควรไปพบแพทย์','คุณอยู่ที่ชุดจัดการสารหก');
+    break;
+  case 'ext':
+    if(pre){ toast('ถังดับเพลิงชนิด CO₂','info'); return; }
+    if(wasted){ setFirst('ext'); log('ไปที่ถังดับเพลิง','warn','ไม่เกี่ยวข้องกับเหตุการณ์ เสียเวลา',''); fb('warn','ถังดับเพลิงไม่เกี่ยวกับเหตุการณ์นี้','คุณอยู่ที่ถังดับเพลิง'); }
+    break;
+  case 'door':
+    if(pre){ toast('ประตูทางออก','info'); return; }
+    if(em) goDoctor();
+    break;
+  default: toast(INTER[id].name,'info');
+  }
+}
+function leverModal(){
+  const opts=shuffle([
+    {label:'ดันคันโยกสีเหลืองให้น้ำไหลต่อเนื่อง (มือว่างทั้งสองข้าง)',ok:true},
+    {label:'เปิดน้ำแล้วใช้มือวักน้ำมาล้างตา',ok:false}]);
+  modal('ที่ล้างตาฉุกเฉิน','<p>คุณมาถึงที่ล้างตาฉุกเฉินแล้ว จะเปิดใช้งานอย่างไร?</p>',
+    opts.map(o=>({label:o.label,onClick:()=>{ S.lever=o.ok;
+      log(o.ok?'เปิดน้ำด้วยคันโยก (มือว่างสองข้าง)':'ใช้มือวักน้ำล้างตา',o.ok?'ok':'warn',o.ok?'':'มือไม่ว่างพอที่จะถ่างเปลือกตา น้ำไม่ต่อเนื่อง','MT 5.1.3.7');
+      fb(o.ok?'ok':'warn',o.ok?'ถูกต้อง: คันโยกทำให้น้ำไหลต่อเนื่องและมือว่างสำหรับถ่างเปลือกตา':'การวักน้ำทำให้น้ำไม่ต่อเนื่องและมือไม่ว่าง ควรดันคันโยก','💧 น้ำเริ่มไหล');
+      openFlush(); }})));
+}
+function openFlush(){ S.phase='flushing'; S.ui=true; P.path=[]; P.pending=null; { const e=new THREE.Vector3(); eyewashG.getWorldPosition(e); const nx=S.side==='A'?1:0, nz=S.side==='A'?0:1; P.flushPos=[e.x+nx*0.62,e.z+nz*0.62]; P.yawT=Math.atan2(-nx,-nz); } $('#actions').classList.remove('show'); $('#flushPanel').classList.add('show'); updateBtns(); updateFlushUI(); }
+function closeFlush(){ setHold(false); $('#flushPanel').classList.remove('show'); S.phase='emergency'; S.ui=false; P.flushPos=null; P.path=[[INTER.eyewash.ax,INTER.eyewash.az]]; $('#actions').classList.add('show'); }
+function setHold(v){ if(v&&S.phase!=='flushing') return; S.holding=v; $('#holdBtn').classList.toggle('active',v); }
+const hb=$('#holdBtn');
+hb.addEventListener('pointerdown',e=>{ e.preventDefault(); try{hb.setPointerCapture(e.pointerId);}catch(_){} setHold(true); });
+['pointerup','pointercancel','lostpointercapture'].forEach(ev=>hb.addEventListener(ev,()=>setHold(false)));
+$('#lidsBtn').onclick=()=>{ S.lidsOpen=!S.lidsOpen; updateBtns(); if(S.lidsOpen) log('ถ่างเปลือกตาให้น้ำเข้าถึง','info','','MT 5.1.3.7'); };
+$('#lensBtn').onclick=()=>{ if(S.lensRemoved) return;
+  if(!S.lens){ toast('คุณไม่ได้สวมคอนแทคเลนส์','info'); return; }
+  S.lensRemoved=true; burst(P.x,1.75,P.z,0xbae6fd,6,0.6,0.015,1,0.5); log('ถอดคอนแทคเลนส์ระหว่างล้าง','ok','','MT 5.1.3.7'); fb('ok','ถอดคอนแทคเลนส์แล้ว ล้างต่อให้ครบ','คุณถอดคอนแทคเลนส์'); updateBtns(); };
+$('#exitFlush').onclick=()=>{
+  if(!S.flushDone){ crit('หยุดล้างตาก่อนครบ 15 นาที',`ล้างไปเพียง ${Math.floor(S.flushTime)} นาที ต้องล้างต่อเนื่องอย่างน้อย 15 นาที`,'MT 5.1.3.7'); }
+  closeFlush(); };
+function updateFlushUI(){ const m=Math.min(15,S.flushTime); $('#fpFill').style.width=(m/15*100)+'%';
+  $('#fpText').textContent=S.flushDone?'✓ ล้างครบ 15 นาทีแล้ว — ออกจากจุดล้างตาได้':`ล้างแล้ว ${Math.floor(m)} / 15 นาที`;
+  $('#exitFlush').textContent=S.flushDone?'✓ เสร็จสิ้น ออกจากจุดล้างตา':'หยุดล้าง / ออกจากจุดล้างตา'; $('#exitFlush').className='btn '+(S.flushDone?'pri':'ghost'); }
+
+function sdsModal(){
+  const opts=shuffle(CHEMS.map(c=>({label:c.name,id:c.id}))).concat([{label:'ไม่แน่ใจ / ปิดแฟ้ม',id:null}]);
+  modal('แฟ้ม SDS','<p>เลือก SDS ของสารที่กระเด็นเข้าตา</p>',opts.map(o=>({label:o.label,cls:o.id?'':'ghost',onClick:()=>{
+    if(!o.id) return;
+    if(!S.flushDone) setFirst('sds');
+    if(o.id===S.chem.id){ if(!S.sdsOk){ S.sdsOk=true; S.sdsT=t();
+        log('ตรวจ SDS: '+S.chem.name,S.flushDone?'ok':'warn',S.flushDone?'':'ควรล้างตาให้ครบก่อนแล้วจึงค้น SDS','MT 5.1.3.7'); }
+      modal('SDS: '+S.chem.name,`<div class="sds"><b>หัวข้อ 4 · มาตรการปฐมพยาบาล (กรณีเข้าตา)</b><br>ล้างตาด้วยน้ำสะอาดปริมาณมากทันทีอย่างน้อย 15 นาที โดยถ่างเปลือกตา ถอดคอนแทคเลนส์ถ้าทำได้ง่าย แล้วไปพบแพทย์ทันที พร้อมนำ SDS ไปด้วย</div>`,[{label:'ปิดแฟ้ม',cls:'pri'}]);
+    } else { log('เลือก SDS ผิดชนิด ('+o.label+')','warn','ข้อมูลที่แจ้งแพทย์จะคลาดเคลื่อน','MT 5.1.3.7'); fb('warn','SDS นี้ไม่ใช่สารที่คุณใช้ ตรวจชื่อบนฉลากขวดอีกครั้ง','คุณเปิด SDS: '+o.label); }
+  }})));
+}
+function goDoctor(){
+  if(S.phase!=='emergency') return;
+  if(!S.flushDone){ crit('ออกจากห้องโดยยังล้างตาไม่ครบ 15 นาที','ต้องล้างตาให้ครบก่อนไปพบแพทย์','MT 5.1.3.7'); setTimeout(finish,1400); return; }
+  reportModal();
+}
+function reportModal(){
+  const chemOpts=shuffle(CHEMS).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  modal('รายงานอุบัติการณ์ (Incident report)',
+   `<div class="form">
+     <label>1. สารเคมีที่สัมผัส</label><select id="rChem"><option value="">— เลือก —</option>${chemOpts}</select>
+     <label>2. อวัยวะที่สัมผัส</label><select id="rPart"><option value="">— เลือก —</option><option value="eye">ดวงตา</option><option value="hand">มือ</option><option value="skin">ผิวหนังลำตัว</option><option value="resp">ทางเดินหายใจ</option></select>
+     <label>3. การปฐมพยาบาลที่ทำไปแล้ว (เลือกได้หลายข้อ)</label>
+     <label class="cb"><input type="checkbox" value="flush"> ล้างตาด้วยน้ำสะอาด 15 นาที</label>
+     <label class="cb"><input type="checkbox" value="lens"> ถอดคอนแทคเลนส์</label>
+     <label class="cb"><input type="checkbox" value="cloth"> ถอดเสื้อผ้าที่เปื้อนสาร</label>
+     <label class="cb"><input type="checkbox" value="neutral"> ใช้สารทำให้เป็นกลางล้างตา</label>
+     <label>4. การแจ้งและส่งต่อ</label><select id="rNotify"><option value="">— เลือก —</option><option value="sup">แจ้งหัวหน้างาน/ผู้จัดการความปลอดภัย และไปพบแพทย์ทันที</option><option value="peer">แจ้งเพื่อนร่วมงานเท่านั้น</option><option value="none">ไม่ต้องแจ้ง เพราะอาการดีขึ้นแล้ว</option></select>
+   </div>`,
+   [{label:'ส่งรายงานและไปพบแพทย์',cls:'pri',onClick:submitReport},{label:'ยกเลิก (กลับไปในห้อง)',cls:'ghost'}]);
+}
+function submitReport(){
+  const chem=document.getElementById('rChem').value, part=document.getElementById('rPart').value, notify=document.getElementById('rNotify').value;
+  const aid=[...document.querySelectorAll('.form .cb input:checked')].map(i=>i.value);
+  const exp=[]; if(S.flushDone) exp.push('flush'); if(S.lensRemoved) exp.push('lens'); if(S.clothing) exp.push('cloth'); if(S.usedNeutral) exp.push('neutral');
+  const aidOk=exp.length===aid.length&&exp.every(x=>aid.includes(x));
+  const pts=(chem===S.chem.id?3:0)+(part==='eye'?2:0)+(aidOk?3:0)+(notify==='sup'?2:0);
+  S.report={chem,part,aid,notify,pts,aidOk};
+  log('ส่งรายงานอุบัติการณ์และไปพบแพทย์',pts>=8?'ok':'warn',`คะแนนรายงาน ${pts}/10`,'MT 5.1.3.8, 7.1.3');
+  finish();
+}
+
+/* ================= SCORING & RESULTS ================= */
+function computeScore(){
+  const steps=[]; const add=(label,pts,max,ref)=>steps.push({label,pts,max,ref});
+  add('ขอความช่วยเหลือ / แจ้งเหตุ',S.help?8:0,8,'MT 5.1.3.6');
+  add('ไปถึงที่ล้างตาฉุกเฉิน',S.eyewashT!=null?10:0,10,'MT 5.1.3.2');
+  add('เปิดน้ำด้วยคันโยก (มือว่างสองข้าง)',S.lever?4:0,4,'MT 5.1.3.7');
+  const lr=S.flushTime>0?S.lidsTime/S.flushTime:0;
+  add(`ถ่างเปลือกตาระหว่างล้าง (${Math.round(lr*100)}% ของเวลา)`,lr>=0.8?7:lr>=0.4?3:0,7,'MT 5.1.3.7');
+  add(S.lens?'ถอดคอนแทคเลนส์':'คอนแทคเลนส์ (ไม่ได้สวม · ได้คะแนนอัตโนมัติ)',(!S.lens||S.lensRemoved)?5:0,5,'MT 5.1.3.7');
+  add('ล้างตาต่อเนื่องครบ 15 นาที',S.flushDone?10:0,10,'MT 5.1.3.7');
+  add('ถอดเสื้อผ้าที่เปื้อนสาร',S.clothing?3:0,3,'MT 5.1.3.7');
+  add('ตรวจสอบชื่อสารจาก SDS',S.sdsOk?3:0,3,'MT 5.1.3.7');
+  const order=[
+    {label:'ขอความช่วยเหลือก่อนล้างตาเสร็จ',ok:S.help&&(!S.flushDone||S.helpT<=S.flushDoneT)},
+    {label:'จุดแรกที่ไปคือที่ล้างตาฉุกเฉิน',ok:S.firstLoc==='eyewash'},
+    {label:'ถอดเสื้อผ้าหลังเริ่มล้างตา (ไม่เสียเวลาก่อนล้าง)',ok:S.clothing&&S.eyewashT!=null&&S.clothingT>=S.eyewashT},
+    {label:'ค้น SDS หลังล้างตาครบแล้ว',ok:S.sdsOk&&S.flushDone&&S.sdsT>=S.flushDoneT}];
+  const et=S.eyewashT;
+  const timePts=et==null?0:et<=10?20:et<=15?12:et<=20?6:0;
+  const sSteps=steps.reduce((a,b)=>a+b.pts,0), sOrder=order.filter(o=>o.ok).length*5, sRep=S.report?S.report.pts:0;
+  const total=sSteps+sOrder+timePts+sRep;
+  return {steps,order,sSteps,sOrder,timePts,sRep,total,passed:total>=80&&S.critical.length===0};
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+let lastJSON='';
+function finish(){
+  if(S.phase==='done') return;
+  S.endT=t(); S.phase='done'; S.ui=true; setHold(false);
+  $('#actions').classList.remove('show'); $('#flushPanel').classList.remove('show'); $('#modal').classList.remove('show'); $('#hint').classList.remove('show');
+  canvas.style.filter='none'; $('#vignette').style.opacity=0; if(waterGain) waterGain.gain.value=0;
+  const R=computeScore();
+  const json={learner:S.name||'(ไม่ระบุ)',mode:S.mode,module:'M3',
+    randomized:{chemical:S.chem.id,eyewashLocation:S.side==='A'?'left-wall':'back-wall',contactLens:S.lens},
+    score:{total:R.total,steps:R.sSteps,order:R.sOrder,time:R.timePts,report:R.sRep},
+    timeToEyewashSec:S.eyewashT==null?null:+S.eyewashT.toFixed(1),flushMinutesSimulated:+S.flushTime.toFixed(1),
+    passed:R.passed,criticalErrors:S.critical.map(c=>c.action),report:S.report,events:S.log,finishedAt:new Date().toISOString()};
+  lastJSON=JSON.stringify(json,null,2);
+  const bar=(label,v,max)=>`<div class="barrow"><div>${label}</div><div class="bar"><i style="width:${max?v/max*100:0}%"></i></div><div style="text-align:right;font-weight:700">${v}/${max}</div></div>`;
+  const cls={ok:'t-ok',warn:'t-warn',crit:'t-crit',info:'t-info'}, sym={ok:'✓',warn:'!',crit:'⛔',info:'•'};
+  $('#results').innerHTML=`<div class="res wood">
+   <div class="kicker">LAB SAFE HERO · ผลการประเมิน M3</div><h2 style="margin:4px 0 10px;color:#6b3f22;font-weight:600">👁️ สารเคมีกระเด็นเข้าตา</h2>
+   <div class="res-head"><div class="big">${R.total}<span>/100</span></div><div class="badge ${R.passed?'pass':'fail'}">${R.passed?'✓ ผ่าน — พร้อมเข้าปฏิบัติงาน':'✗ ไม่ผ่าน — ต้องฝึกซ้ำ'}</div></div>
+   <div class="meta">ผู้ฝึก: <b>${esc(S.name||'(ไม่ระบุ)')}</b> · โหมด: ${S.mode==='exam'?'สอบ':'ฝึก'} · เวลาที่ใช้: ${fmt(S.endT)}<br>
+     สถานการณ์ที่สุ่มได้: ${S.chem.name} · ที่ล้างตาอยู่ผนัง${S.side==='A'?'ซ้าย':'ด้านหลัง'} · ${S.lens?'สวม':'ไม่ได้สวม'}คอนแทคเลนส์<br>
+     เกณฑ์ผ่าน: ≥ 80 คะแนน และไม่มีข้อผิดพลาดร้ายแรง</div>
+   <div class="sec" id="rankBox" style="font-size:15px"></div>
+   ${S.critical.length?`<div class="sec crit-box"><h4>⛔ ข้อผิดพลาดร้ายแรง (Critical error) — ไม่ผ่านทันที</h4>${S.critical.map(c=>`<div style="margin:6px 0"><b>${esc(c.action)}</b> — ${esc(c.note)} <span class="chip">${esc(c.ref)}</span></div>`).join('')}</div>`:''}
+   <div class="sec"><h4>คะแนนรายด้าน</h4>
+     ${bar('ขั้นตอนครบถ้วน',R.sSteps,50)}${bar('ลำดับถูกต้อง',R.sOrder,20)}
+     ${bar(`เวลาตอบสนอง (${S.eyewashT==null?'ไปไม่ถึง':S.eyewashT.toFixed(1)+' วินาที'})`,R.timePts,20)}${bar('รายงานอุบัติการณ์',R.sRep,10)}</div>
+   <div class="sec"><h4>รายการตรวจ (Checklist)</h4><table><tr><th>ขั้นตอน</th><th>คะแนน</th><th>อ้างอิง</th></tr>
+     ${R.steps.map(s=>`<tr><td class="${s.pts===s.max?'t-ok':s.pts?'t-warn':'t-crit'}">${s.pts===s.max?'✓':s.pts?'◐':'✗'} ${esc(s.label)}</td><td>${s.pts}/${s.max}</td><td>${s.ref}</td></tr>`).join('')}
+     ${R.order.map(o=>`<tr><td class="${o.ok?'t-ok':'t-crit'}">${o.ok?'✓':'✗'} ลำดับ: ${esc(o.label)}</td><td>${o.ok?5:0}/5</td><td>MT 5.1.3.7</td></tr>`).join('')}
+     <tr><td class="${S.report&&S.report.pts>=8?'t-ok':'t-warn'}">${S.report?'✓':'✗'} รายงานอุบัติการณ์${S.report&&!S.report.aidOk?' (ข้อมูลปฐมพยาบาลไม่ตรงกับที่ทำจริง)':''}</td><td>${R.sRep}/10</td><td>MT 5.1.3.8, 7.1.3</td></tr></table></div>
+   <div class="sec"><h4>ไทม์ไลน์การกระทำ</h4><table><tr><th>เวลา</th><th>การกระทำ</th><th>หมายเหตุ</th></tr>
+     ${S.log.map(l=>`<tr><td style="white-space:nowrap">${fmt(l.t)}</td><td class="${cls[l.type]}">${sym[l.type]} ${esc(l.action)}</td><td style="color:#9fb0bc">${esc(l.note)}${l.ref?` <span class="chip">${esc(l.ref)}</span>`:''}</td></tr>`).join('')}</table></div>
+   <div class="sec"><h4>ขั้นตอนที่ถูกต้อง</h4><ol style="margin:0;padding-left:20px;line-height:1.8;color:#d6e0e6">
+     <li>ตะโกนขอความช่วยเหลือ หรือแจ้งเหตุ</li><li>ไปที่ล้างตาฉุกเฉินภายใน 10 วินาที แล้ว<b>ดันคันโยก</b>ให้น้ำไหลต่อเนื่อง</li>
+     <li>ถ่างเปลือกตาและล้างต่อเนื่อง<b>อย่างน้อย 15 นาที</b> ถอดคอนแทคเลนส์และเสื้อผ้าที่เปื้อนระหว่างล้าง</li>
+     <li>ห้ามขยี้ตา และห้ามใช้สารทำให้เป็นกลาง</li><li>ตรวจชื่อสารจาก SDS แล้วนำไปให้แพทย์</li><li>แจ้งหัวหน้างาน ไปพบแพทย์ และเขียนรายงานอุบัติการณ์</li></ol></div>
+   <div class="sec"><h4>ใช้เป็นหลักฐานตามมาตรฐาน</h4><div style="font-size:14px;color:#c8d4db;line-height:1.7">
+     ผลนี้บันทึกเป็นประวัติการอบรมความปลอดภัยรายบุคคล ใช้เป็นหลักฐานของ <b>LA MT 5.1.3.9</b> (อบรมความปลอดภัยทุกคน รวมบุคลากรใหม่และนักศึกษาฝึกงาน), <b>MT 2.4</b> (ปฐมนิเทศก่อนปฏิบัติงาน) และ <b>MT 2.5.2</b> (ประเมินสมรรถนะ) รวมถึง HA หมวด II-3 (สิ่งแวดล้อมและความปลอดภัย)<br>
+     <span style="color:#9fb0bc">ในระบบจริง ข้อมูลด้านล่างจะถูกบันทึกลงฐานข้อมูล (เช่น Supabase) แทนการคัดลอก</span></div></div>
+   <div class="res-btns"><button class="btn pri" id="againBtn">↻ เลือกสถานการณ์ / ฝึกใหม่</button><button class="btn" id="copyBtn">คัดลอกข้อมูลผลการฝึก (JSON)</button></div>
+   <textarea id="json" readonly></textarea></div>`;
+  $('#results').classList.add('show'); $('#hud').classList.remove('show');
+  $('#againBtn').onclick=()=>location.reload(); submitResult('M3',R.total,R.sSteps+R.sOrder,R.timePts,R.sRep,S.endT,R.passed,S.critical.length);
+  $('#copyBtn').onclick=async()=>{ const ta=$('#json'); ta.value=lastJSON; try{ await navigator.clipboard.writeText(lastJSON); $('#copyBtn').textContent='✓ คัดลอกแล้ว'; }catch(e){ ta.style.display='block'; ta.focus(); ta.select(); $('#copyBtn').textContent='เลือกข้อความด้านล่างแล้วคัดลอก'; } };
+}
+
+/* ================= HUD / HINTS ================= */
+function hintText(){
+  if(S.mod!=='M3'){ if(S.phase!=='emergency') return ''; return exam()?'จัดการสถานการณ์ให้ถูกต้องตามขั้นตอน':(G&&G.hint?G.hint():''); }
+  if(S.phase==='pre') return 'สำรวจห้องได้ตามต้องการ แล้วคลิก<b>ขวดสารเคมีสีน้ำตาล</b>บนโต๊ะเพื่อเริ่มงาน';
+  if(exam()) return S.phase==='flushing'?'':'จัดการสถานการณ์ให้ถูกต้องตามขั้นตอน';
+  if(S.phase==='flushing') return S.flushDone?'ล้างครบแล้ว กด "เสร็จสิ้น"':'กดค้างเพื่อล้างตา · เปิดการถ่างเปลือกตา · ถอดคอนแทคเลนส์และเสื้อผ้าที่เปื้อนระหว่างล้าง';
+  if(!S.eyewashT) return S.help?'รีบไปที่ล้างตาฉุกเฉิน — มองหา<b>ป้ายสีเขียว</b>ที่ผนัง':'ตะโกนขอความช่วยเหลือ (ปุ่มด้านล่าง) แล้วรีบไปที่ล้างตา — <b>ป้ายสีเขียว</b>';
+  if(!S.flushDone) return 'กลับไปที่ล้างตาและล้างให้ครบ 15 นาที';
+  if(!S.sdsOk) return 'ตรวจชื่อสารจาก<b>แฟ้ม SDS</b> (ชั้นไม้ผนังซ้ายใกล้ประตู) เพื่อแจ้งแพทย์';
+  return 'คลิก<b>ประตูทางออก</b> เพื่อไปพบแพทย์และเขียนรายงานอุบัติการณ์';
+}
+let lastHint='';
+function updateHUD(){
+  { const ab=$('#actions'), fp=$('#flushPanel'); const hgt=fp.classList.contains('show')?fp.offsetHeight:(ab.classList.contains('show')?ab.offsetHeight:0); if(hgt!==updateHUD._h){ updateHUD._h=hgt; document.documentElement.style.setProperty('--abh',hgt+'px'); } }
+  const em=S.phase==='emergency'||S.phase==='flushing';
+  $('#timer').textContent=em?fmt(t()):'--:--';
+  const c=$('#count');
+  if(S.mod!=='M3'){ const ch=S.phase==='emergency'&&G&&G.chip?G.chip():null; if(ch){ c.style.display='block'; c.classList.toggle('red',!!ch.red); c.innerHTML=ch.html; } else c.style.display='none'; if(G&&S.phase==='emergency') refreshActions(); }
+  else if(em&&S.eyewashT==null&&!exam()){ const r=10-t(); c.style.display='block'; c.classList.toggle('red',r<3);
+    c.innerHTML=r>0?`ไปถึงที่ล้างตา: <b>${Math.ceil(r)}</b> วินาที`:'<b>เกิน 10 วินาทีแล้ว!</b>'; }
+  else c.style.display='none';
+  const h=hintText(); if(h!==lastHint){ lastHint=h; $('#hint').innerHTML=h; $('#hint').classList.toggle('show',!!h&&S.phase!=='done'); }
+}
+
+/* ================= LOOP ================= */
+const clock=new THREE.Clock(); let beepAcc=0, pouring=false, pourT=0, splashed=false, partAcc=0;
+function lerpAng(a,b,k){ let d=b-a; while(d>Math.PI) d-=2*Math.PI; while(d<-Math.PI) d+=2*Math.PI; return a+d*k; }
+function moveAlong(E,dt,speed){ if(!E.path.length) return false; const tg=E.path[0], dx=tg[0]-E.x, dz=tg[1]-E.z, d=Math.hypot(dx,dz), step=speed*dt;
+  if(d<=step){ E.x=tg[0]; E.z=tg[1]; E.path.shift(); } else { E.x+=dx/d*step; E.z+=dz/d*step; } if(d>0.03) E.yawT=Math.atan2(dx,dz); return true; }
+let marker=null;
+function makeMarker(){ const tx=canvasTex(128,160,(g,w,h)=>{ g.fillStyle='#ffd45c'; g.strokeStyle='#a8744a'; g.lineWidth=8; g.beginPath(); g.arc(64,60,50,0,Math.PI*2); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(44,104); g.lineTo(64,152); g.lineTo(84,104); g.closePath(); g.fillStyle='#a8744a'; g.fill(); g.fillStyle='#6b3f22'; g.font='700 70px Mitr, sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('!',64,64); });
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,depthTest:false,transparent:true})); sp.scale.set(0.42,0.52,1); sp.center.set(0.5,0); sp.renderOrder=25; sp.userData.noPick=true; sp.visible=false; scene.add(sp); return sp; }
+function markerTarget(){ if(S.mod!=='M3') return (exam()||S.phase!=='emergency'||!G||!G.marker)?null:G.marker(); if(exam()||S.phase==='intro'||S.phase==='done'||S.phase==='flushing'||pouring) return null; if(S.phase==='pre') return 'acid'; if(!S.flushDone) return 'eyewash'; if(!S.sdsOk) return 'sds'; return 'door'; }
+function startPour(){ S.ui=true; P.path=[]; P.pending=null; P.yawT=Math.PI; PC.override='pour'; PC.overT=1.5; pouring=true; pourT=0; splashed=false; }
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),0.05), time=performance.now()/1000;
+  let moving=false;
+  if(active()){
+    const had=P.path.length; if(moveAlong(P,dt,2.6)) moving=true; if(had&&!P.path.length) arrive();
+    let f=0,s=0; if(keys.KeyW||keys.ArrowUp) f+=1; if(keys.KeyS||keys.ArrowDown) f-=1; if(keys.KeyD) s+=1; if(keys.KeyA) s-=1;
+    if(keys.ArrowLeft) CAM.yaw=clamp(CAM.yaw+1.2*dt,0.2,1.38); if(keys.ArrowRight) CAM.yaw=clamp(CAM.yaw-1.2*dt,0.2,1.38);
+    if(f||s){ P.path=[]; P.pending=null; const fx=-Math.sin(CAM.yaw), fz=-Math.cos(CAM.yaw), rx=Math.cos(CAM.yaw), rz=-Math.sin(CAM.yaw);
+      let mx=fx*f+rx*s, mz=fz*f+rz*s; const ln=Math.hypot(mx,mz)||1; mx/=ln; mz/=ln; const sp=2.4*dt, nx=P.x+mx*sp, nz=P.z+mz*sp;
+      if(freeXZ(nx,P.z)) P.x=nx; if(freeXZ(P.x,nz)) P.z=nz; P.yawT=Math.atan2(mx,mz); moving=true; }
+  }
+  if(S.phase==='flushing'&&P.flushPos){ const k=Math.min(1,dt*6); P.x+=(P.flushPos[0]-P.x)*k; P.z+=(P.flushPos[1]-P.z)*k; }
+  if(P.yawT!=null) P.yaw=lerpAng(P.yaw,P.yawT,1-Math.exp(-10*dt));
+  PC.root.position.set(P.x,0,P.z); PC.root.rotation.y=P.yaw;
+  if(pouring){ pourT+=dt; acidG.rotation.z=-Math.min(1,pourT/0.9)*1.1;
+    if(pourT>1.0&&!splashed){ splashed=true; const mx=-0.3+0.3*Math.sin(1.1), my=0.87+0.3*Math.cos(1.1), mz=0.34;
+      const fxp=P.x+Math.sin(P.yaw)*0.25, fyp=1.33, fzp=P.z+Math.cos(P.yaw)*0.25; const dx=fxp-mx, dy=fyp-my, dz=fzp-mz, dd=Math.hypot(dx,dy,dz)||1;
+      for(let i=0;i<22;i++) spawn(mx,my,mz,dx/dd*2.6+(Math.random()-0.5)*0.7,dy/dd*2.6+0.6+(Math.random()-0.5)*0.6,dz/dd*2.6+(Math.random()-0.5)*0.7,i%3?0xffa64d:0xffd166,0.5,0.025,3); }
+    if(pourT>1.25){ pouring=false; acidG.rotation.z=0; S.ui=false; startEmergency(); } }
+  let st; if(PC.overT>0){ PC.overT-=dt; st=PC.override; } else if(S.mod!=='M3') st=(G&&G.anim&&S.phase==='emergency')?G.anim():'idle'; else st=S.phase==='flushing'?'flush':((S.phase==='emergency'&&!S.flushDone)?'hurt':'idle');
+  const hurtExpr=S.mod!=='M3'?(S.phase==='emergency'&&G&&G.expr&&G.expr()==='hurt'):((S.phase==='emergency'||S.phase==='flushing')&&S.flushTime<10);
+  if(S.mod!=='M3'&&G&&S.phase==='emergency'&&G.update) G.update(dt,time);
+  animChar(PC,dt,time,moving,st,hurtExpr?'hurt':'happy');
+  [PC,NPC.C].forEach(C=>{ if(C&&C.bubbleT>0){ C.bubbleT-=dt; if(C.bubbleT<=0) C.bubble.visible=false; } });
+  PC.tag.visible=!PC.bubble.visible&&S.phase!=='intro';
+  npcUpdate(dt,time);
+  if(ring.material.opacity>0) ring.material.opacity=Math.max(0,ring.material.opacity-dt*0.9);
+  if(S.phase==='pre') acidMat.emissiveIntensity=0.18+0.18*Math.sin(time*3.8);
+  if(S.phase==='flushing'&&S.holding&&!S.flushDone){ S.flushTime+=dt; if(S.lidsOpen) S.lidsTime+=dt;
+    if(S.flushTime>=15){ S.flushTime=15; S.flushDone=true; S.flushDoneT=t(); log('ล้างตาต่อเนื่องครบ 15 นาที (จำลอง)','ok','','MT 5.1.3.7'); fb('ok','✓ ล้างตาครบ 15 นาทีแล้ว','💧 ล้างครบ 15 นาที'); setHold(false);
+      burst(P.x,1.75,P.z,0xfde68a,12,0.9,0.03,1,0.9); burst(P.x,1.75,P.z,0x9be7b4,10,0.8,0.025,1,0.9); }
+    updateFlushUI(); }
+  const water=S.phase==='flushing'&&S.holding; waterMeshes.forEach(w=>w.visible=water);
+  if(water&&eyewashG){ partAcc+=dt; while(partAcc>0.03){ partAcc-=0.03; [-0.07,0.07].forEach(x=>{ tmpV.set(x,1.06,0.05); eyewashG.localToWorld(tmpV);
+    spawn(tmpV.x,tmpV.y,tmpV.z,(Math.random()-0.5)*0.35,1.0+Math.random()*0.4,(Math.random()-0.5)*0.35,0x8fd3ff,0.45,0.02,5); }); } }
+  if(waterGain) waterGain.gain.value+=((water?0.12:(S.mod!=='M3'&&S.phase==='emergency'&&G&&G.hiss&&G.hiss()?0.045:0))-waterGain.gain.value)*0.15;
+  if(S.mod!=='M3'&&S.phase==='emergency'&&G&&G.urgent&&G.urgent()){ beepAcc+=dt; if(beepAcc>0.9){ beepAcc=0; beep(66,0.12,0.18); setTimeout(()=>beep(60,0.1,0.12),140); } }
+  if(S.mod==='M3'&&(S.phase==='emergency'||S.phase==='flushing')){
+    const b=S.flushDone?0:S.blurBase*(1-0.85*Math.min(1,S.flushTime/15)); canvas.style.filter=`blur(${b.toFixed(2)}px) saturate(${(1-b*0.08).toFixed(2)})`;
+    $('#vignette').style.opacity=Math.min(1,b/3).toFixed(2);
+    if(!S.flushDone&&!S.holding){ beepAcc+=dt; if(beepAcc>0.9){ beepAcc=0; beep(66,0.12,0.22); setTimeout(()=>beep(60,0.1,0.16),140); } }
+  }
+  updateParticles(dt);
+  // cozy isometric camera (follows the player)
+  const mt=markerTarget(); if(mt&&marker){ const c=centerOf(mt); marker.position.set(c.x,(mt==='acid'?1.55:mt==='door'?2.75:2.35)+Math.sin(time*4)*0.08,c.z); marker.visible=true; } else if(marker) marker.visible=false;
+  if(S.phase==='intro') CAM.yaw=0.78+Math.sin(time*0.25)*0.3;
+  const dist=S.phase==='flushing'?Math.min(CAM.dist,7.5):CAM.dist, pitch=CAM.pitch, ty=0.9, hh=Math.cos(pitch)*dist;
+  tmpV.set(P.x+Math.sin(CAM.yaw)*hh,ty+Math.sin(pitch)*dist,P.z+Math.cos(CAM.yaw)*hh); tmpL.set(P.x,ty,P.z);
+  if(!CAM.init){ camera.position.copy(tmpV); camLook.copy(tmpL); CAM.init=true; } else { camera.position.lerp(tmpV,1-Math.exp(-5*dt)); camLook.lerp(tmpL,1-Math.exp(-6*dt)); }
+  camera.lookAt(camLook);
+  updateHUD();
+  renderer.render(scene,camera);
+}
+
+/* ================= EXTRA PROPS (all modules) ================= */
+let windowGlass=null, syringeG=null, trayG=null;
+function hitbox(id,name,w,h,d,x,y,z,ax,az){ const g=new THREE.Group(); scene.add(g); const m=box(w,h,d,new THREE.MeshBasicMaterial({visible:false}),x,y,z,g); m.castShadow=false; reg(g,id,name,ax,az); return g; }
+function buildExtras(){
+  const cabM=mat(0xf6efe4), dgr=mat(0x4a4f57,{roughness:0.6}), trimM=mat(0xc0825a,{roughness:0.7});
+  // PPE cabinet (back wall)
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.52,0.8,0.22,cabM,0.49,1.45,-4.88,g,0.04);
+    rbox(0.44,0.66,0.02,mat(0xd9eff2,{transparent:true,opacity:0.6}),0.49,1.45,-4.76,g,0.01);
+    [[0x9b8fe6,1.62],[0x8fc1e3,1.45],[0xfffaf3,1.28]].forEach(([c,y])=>rbox(0.36,0.1,0.12,mat(c),0.49,y,-4.86,g,0.03));
+    sign(['PPE','อุปกรณ์ป้องกัน'],'#6aa89c','#ffffff',0.5,0.18,0.49,1.98,-4.985,0,null,g);
+    reg(g,'ppe','ตู้อุปกรณ์ป้องกันส่วนบุคคล (PPE)',0.3,-4.15); })();
+  // biological spill kit (next to chemical kit)
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.42,0.66,0.45,mat(0xe0703a),5.9,0.33,-4.62,g,0.05); rbox(0.46,0.07,0.49,mat(0x4a4f57),5.9,0.69,-4.62,g,0.03);
+    sign(['BIOHAZARD','SPILL KIT'],'#e0703a','#ffffff',0.36,0.28,5.9,0.4,-4.393,0,null,g);
+    reg(g,'biokit','ชุดจัดการเชื้อ/เลือดหก (Biological spill kit)',5.9,-3.85); addObs(5.9,-4.62,0.42,0.45); })();
+  // electrical panel above the chemical spill kit
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.46,0.6,0.1,mat(0x9aa4ab,{roughness:0.5}),6.4,1.6,-4.94,g,0.03);
+    sign(['ตู้ไฟฟ้า','ELECTRICAL'],'#f2c94c','#3a2a1d',0.36,0.14,6.4,2.04,-4.985,0,null,g);
+    reg(g,'panel','ตู้ควบคุมไฟฟ้า (เบรกเกอร์)',6.4,-3.85); })();
+  // fire alarm pull station
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.15,0.2,0.07,mat(0xd63a3a),-3.32,1.35,-4.955,g,0.025); rbox(0.06,0.04,0.03,mat(0xfaf6ef),-3.32,1.33,-4.915,g,0.01);
+    sign(['FIRE ALARM'],'#d63a3a','#ffffff',0.3,0.08,-3.32,1.56,-4.985,0,null,g);
+    reg(g,'alarm','สัญญาณแจ้งเหตุเพลิงไหม้',-3.15,-4.1); })();
+  // gas valve
+  (function(){ const g=new THREE.Group(); scene.add(g); cyl(0.035,0.035,1.3,mat(0xf2c200),-5.75,0.9,-4.93,g);
+    const wv=new THREE.Mesh(new THREE.TorusGeometry(0.08,0.018,8,18),mat(0xd63a3a)); wv.position.set(-5.75,1.1,-4.86); g.add(wv); g.userData.wheel=wv;
+    cyl(0.04,0.04,0.08,mat(0x4a4f57),-5.75,1.1,-4.89,g).rotation.x=Math.PI/2;
+    sign(['วาล์วแก๊ส','GAS'],'#f2c200','#3a2a1d',0.36,0.16,-5.75,1.75,-4.985,0,null,g);
+    reg(g,'gasvalve','วาล์วแก๊สหลัก',-5.74,-3.95); })();
+  // sharps container on bench 1
+  (function(){ const g=new THREE.Group(); scene.add(g); rbox(0.18,0.2,0.14,mat(0xf2c94c),2.3,0.97,0.36,g,0.03); rbox(0.19,0.04,0.15,mat(0xd63a3a),2.3,1.08,0.36,g,0.015);
+    reg(g,'sharps','ภาชนะทิ้งของมีคม',2.3,1.0); })();
+  // general waste bin (right side)
+  (function(){ const g=new THREE.Group(); scene.add(g); cyl(0.19,0.16,0.5,mat(0x5b7fa6),6.55,0.25,1.0,g); cyl(0.2,0.2,0.04,mat(0x4a6a8f),6.55,0.51,1.0,g);
+    sign(['ขยะทั่วไป'],'#5b7fa6','#ffffff',0.3,0.1,6.35,0.32,1.0,-Math.PI/2,null,g);
+    reg(g,'genbin','ถังขยะทั่วไป',5.9,1.0); addObs(6.55,1.0,0.42,0.42); })();
+  hitbox('redbin','ถังขยะติดเชื้อ (ถุงแดง)',0.45,0.6,0.45,-6.3,0.3,-4.6,-6.3,-3.85);
+  hitbox('chemwaste','ภาชนะรวบรวมขยะสารเคมี',0.45,0.6,0.4,-6.65,0.3,-3.2,-6.0,-3.2);
+  hitbox('window','หน้าต่าง',0.2,1.1,1.1,-6.9,1.65,0.7,-5.9,0.7);
+  scene.traverse(o=>{ if(o.isMesh&&o.geometry&&o.geometry.parameters&&o.geometry.parameters.width===0.95&&o.position.x===-6.91) windowGlass=o; });
+  // syringe (M4) and waste tray (M7) – shown only in their modules
+  syringeG=new THREE.Group(); syringeG.visible=false; scene.add(syringeG);
+  { const s=cyl(0.012,0.012,0.12,mat(0xeaf4f8,{transparent:true,opacity:0.8}),1.95,0.89,0.42,syringeG); s.rotation.z=Math.PI/2; const nd=cyl(0.002,0.002,0.05,mat(0xc8ccd0,{metalness:0.8}),1.87,0.89,0.42,syringeG); nd.rotation.z=Math.PI/2; }
+  trayG=new THREE.Group(); trayG.visible=false; scene.add(trayG); reg(trayG,'tray','ถาดของเสียรอคัดแยก',-1.3,1.0);
+  rbox(0.42,0.04,0.3,mat(0xe9e2d6),-1.3,0.89,0.36,trayG,0.015);
+  [[0xd65a4a,-1.42],[0xf2c94c,-1.32],[0x9fd8cd,-1.22],[0x9b8fe6,-1.14]].forEach(([c,x])=>rbox(0.06,0.03,0.08,mat(c),x,0.925,0.36,trayG,0.01));
+}
+function wearCoat(C){ C.coat.visible=true; C.armMeshes.forEach(a=>a.material=C.coatM); }
+function setGloves(C,on){ C.hands.forEach(h=>h.material=on?C.gloveM:C.skinM); }
+function setGlasses(C,m){ if(!C.glasses) return; if(m==='on'){ C.glasses.position.set(0,0.014,0.103); C.glasses.rotation.x=0; } else { C.glasses.position.set(0,0.088,0.05); C.glasses.rotation.x=-1.0; } }
+
+/* ================= GENERIC MODULE ENGINE ================= */
+let G=null;
+S.mod='M3'; S.done={}; S.seq={}; S.quizPts=0; S.quizC=0;
+function mark(id,action,type,note,ref){ if(S.done[id]!=null) return false; S.done[id]=t(); log(action,type||'ok',note||'',ref||''); return true; }
+function did(id){ return S.done[id]!=null; }
+const R=(label,ok,max,ref)=>({label,pts:ok===true?max:(typeof ok==='number'?ok:0),max,ref});
+function seqModal(key,title,intro,correct,traps,cb){
+  const picked=[], used=[];
+  (function round(){
+    const remC=correct.filter(c=>!picked.includes(c)), remT=traps.filter(x=>!used.includes(x));
+    if(!remC.length){ let good=0; for(let i=0;i<picked.length-1;i++) if(correct.indexOf(picked[i])<correct.indexOf(picked[i+1])) good++;
+      if(picked[0]===correct[0]) good++; S.seq[key]={ratio:good/correct.length,traps:used.map(x=>x.label)}; cb&&cb(S.seq[key]); return; }
+    const opts=shuffle([...remC.map(c=>({c})),...remT.map(x=>({x}))]);
+    modal(title,`<p>${intro}</p><p style="color:var(--mut);font-size:14px;margin:4px 0">ขั้นที่ ${picked.length+1} จาก ${correct.length} · เลือกสิ่งที่ควรทำ<b>เป็นลำดับถัดไป</b></p>`+
+      (picked.length?`<ol style="margin:6px 0 0 18px;font-size:14px;color:#4c7a3a">${picked.map(p=>`<li>${p}</li>`).join('')}</ol>`:''),
+      opts.map(o=>({label:o.c||o.x.label,onClick:()=>{
+        if(o.c){ const exp=correct[picked.length]; picked.push(o.c);
+          if(o.c===exp){ log(o.c,'ok','',''); if(!exam()) toast('✓ '+o.c,'ok',2000); }
+          else { log(o.c,'warn','ลำดับไม่ถูกต้อง ควรทำ "'+exp+'" ก่อน',''); fb('warn','ลำดับยังไม่ถูก ควรทำ "'+exp+'" ก่อน',null); } }
+        else { used.push(o.x); if(o.x.type==='crit') crit(o.x.label,o.x.note,o.x.ref||''); else { log(o.x.label,'warn',o.x.note,o.x.ref||''); fb('warn','✗ '+o.x.note,null); } }
+        setTimeout(round,50); }})));
+  })();
+}
+function choiceModal(title,html,opts){ modal(title,html,shuffle(opts).map(o=>({label:o.label,onClick:o.run}))); }
+function quizModal(onDone){
+  const qs=G.quiz;
+  const html=qs.map((q,i)=>{ const op=shuffle(q.opts.map((o,j)=>({o,j}))); return `<label>${i+1}. ${q.q}</label><select id="qz${i}"><option value="">— เลือกคำตอบ —</option>${op.map(x=>`<option value="${x.j}">${x.o}</option>`).join('')}</select>`; }).join('');
+  modal(G.quizTitle||'คำถามทบทวนก่อนจบภารกิจ',`<div class="form">${html}</div>`,[{label:'ส่งคำตอบและดูผลการประเมิน',cls:'pri',onClick:()=>{
+    let c=0; qs.forEach((q,i)=>{ if(document.getElementById('qz'+i).value==='0') c++; });
+    S.quizC=c; S.quizPts=Math.round(10*c/qs.length); log(`ตอบคำถามทบทวน ถูก ${c}/${qs.length} ข้อ`,c===qs.length?'ok':'warn','',G.quizRef||''); onDone(); }}]);
+}
+function endG(){ if(S.ending||S.phase==='done') return; S.ending=true; setTimeout(()=>quizModal(finishG),400); }
+function buildActions(){ const ab=$('#actions'); ab.innerHTML=''; (G.actions||[]).forEach(a=>{ const b=document.createElement('button'); b.className='btn'; b.id='ga_'+a.id; b.textContent=a.label;
+    b.onclick=()=>{ if(S.phase!=='emergency'||S.ui) return; a.run(); refreshActions(); }; ab.appendChild(b); });
+  ab.classList.toggle('show',!!(G.actions&&G.actions.length)); refreshActions(); }
+function refreshActions(){ (G.actions||[]).forEach(a=>{ const b=document.getElementById('ga_'+a.id); if(b) b.disabled=!!(a.disabled&&a.disabled()); }); }
+function briefG(){
+  modal(`${G.code} · ${G.title}`,`<p>${G.brief}</p><div class="refs">${G.refs.map(r=>`<span class="chip">${r}</span>`).join('')}</div><p style="color:var(--mut);font-size:14px">เมื่อกดเริ่ม เวลาจะเริ่มนับและระบบจะบันทึกทุกการกระทำ</p>`,
+    [{label:'▶ เริ่มสถานการณ์',cls:'pri',onClick:startG}]);
+}
+function startG(){ S.phase='emergency'; S.t0=performance.now(); log('เริ่มสถานการณ์: '+G.title,'info'); G.start&&G.start(); buildActions(); }
+function interactG(id){ if(S.phase!=='emergency'){ toast(INTER[id].name,'info'); return; } if(G.interact&&G.interact(id)) return; toast(INTER[id].name,'info'); }
+function finishG(){
+  if(S.phase==='done') return; S.endT=t(); S.phase='done'; S.ui=true;
+  $('#actions').classList.remove('show'); $('#modal').classList.remove('show'); $('#hint').classList.remove('show'); canvas.style.filter='none'; $('#vignette').style.opacity=0; if(waterGain) waterGain.gain.value=0;
+  const steps=G.score(), sSteps=steps.reduce((a,b)=>a+b.pts,0), tp=G.timeScore(), total=Math.round(sSteps+tp+S.quizPts), passed=total>=80&&S.critical.length===0;
+  const json={learner:S.name||'(ไม่ระบุ)',mode:S.mode,module:G.code,score:{total,steps:sSteps,time:tp,quiz:S.quizPts},passed,criticalErrors:S.critical.map(c=>c.action),events:S.log,finishedAt:new Date().toISOString()};
+  lastJSON=JSON.stringify(json,null,2);
+  const bar=(label,v,max)=>`<div class="barrow"><div>${label}</div><div class="bar"><i style="width:${max?v/max*100:0}%"></i></div><div style="text-align:right;font-weight:600">${v}/${max}</div></div>`;
+  const cls={ok:'t-ok',warn:'t-warn',crit:'t-crit',info:'t-info'}, sym={ok:'✓',warn:'!',crit:'⛔',info:'•'};
+  $('#results').innerHTML=`<div class="res wood">
+   <div class="kicker">LAB SAFE HERO · ผลการประเมิน ${G.code}</div><h2 style="margin:4px 0 10px;color:#6b3f22;font-weight:600">${G.icon} ${G.title}</h2>
+   <div class="res-head"><div class="big">${total}<span>/100</span></div><div class="badge ${passed?'pass':'fail'}">${passed?'✓ ผ่าน — พร้อมปฏิบัติงาน':'✗ ไม่ผ่าน — ต้องฝึกซ้ำ'}</div></div>
+   <div class="meta">ผู้ฝึก: <b>${esc(S.name||'(ไม่ระบุ)')}</b> · โหมด: ${exam()?'สอบ':'ฝึก'} · เวลาที่ใช้: ${fmt(S.endT)} · เกณฑ์ผ่าน: ≥ 80 คะแนน และไม่มีข้อผิดพลาดร้ายแรง</div>
+   <div class="sec" id="rankBox" style="font-size:15px"></div>
+   ${S.critical.length?`<div class="sec crit-box"><h4>⛔ ข้อผิดพลาดร้ายแรง (Critical error) — ไม่ผ่านทันที</h4>${S.critical.map(c=>`<div style="margin:6px 0"><b>${esc(c.action)}</b> — ${esc(c.note)} ${c.ref?`<span class="chip">${esc(c.ref)}</span>`:''}</div>`).join('')}</div>`:''}
+   <div class="sec"><h4>คะแนนรายด้าน</h4>${bar('ขั้นตอนและลำดับ',sSteps,70)}${bar('เวลาตอบสนอง',tp,20)}${bar('คำถามทบทวน/รายงาน',S.quizPts,10)}</div>
+   <div class="sec"><h4>รายการตรวจ (Checklist)</h4><table><tr><th>ขั้นตอน</th><th>คะแนน</th><th>อ้างอิง</th></tr>
+     ${steps.map(s=>`<tr><td class="${s.pts>=s.max?'t-ok':s.pts?'t-warn':'t-crit'}">${s.pts>=s.max?'✓':s.pts?'◐':'✗'} ${esc(s.label)}</td><td>${Math.round(s.pts)}/${s.max}</td><td>${s.ref||''}</td></tr>`).join('')}
+     <tr><td class="${S.quizPts>=10?'t-ok':'t-warn'}">${S.quizPts>=10?'✓':'◐'} คำถามทบทวน (ถูก ${S.quizC}/${G.quiz.length})</td><td>${S.quizPts}/10</td><td>${G.quizRef||''}</td></tr></table></div>
+   <div class="sec"><h4>ไทม์ไลน์การกระทำ</h4><table><tr><th>เวลา</th><th>การกระทำ</th><th>หมายเหตุ</th></tr>
+     ${S.log.map(l=>`<tr><td style="white-space:nowrap">${fmt(l.t)}</td><td class="${cls[l.type]}">${sym[l.type]} ${esc(l.action)}</td><td style="color:var(--mut)">${esc(l.note)}${l.ref?` <span class="chip">${esc(l.ref)}</span>`:''}</td></tr>`).join('')}</table></div>
+   <div class="sec"><h4>ขั้นตอนที่ถูกต้อง</h4><ol style="margin:0;padding-left:20px;line-height:1.8">${G.correct.map(c=>`<li>${c}</li>`).join('')}</ol></div>
+   <div class="sec"><h4>ใช้เป็นหลักฐานตามมาตรฐาน</h4><div style="font-size:14px;line-height:1.7">ผลนี้บันทึกเป็นประวัติการฝึกความปลอดภัยรายบุคคล ใช้เป็นหลักฐานของ <b>LA MT 5.1.3.9</b> (อบรมความปลอดภัยทุกคน), <b>MT 2.4</b> (ปฐมนิเทศ), <b>MT 2.5.2</b> (ประเมินสมรรถนะ) และมาตรฐานเฉพาะเรื่อง: ${G.refs.join(', ')}</div></div>
+   <div class="res-btns"><button class="btn pri" id="againBtn">↻ เลือกสถานการณ์ / ฝึกใหม่</button><button class="btn" id="copyBtn">คัดลอกข้อมูลผลการฝึก (JSON)</button></div>
+   <textarea id="json" readonly></textarea></div>`;
+  $('#results').classList.add('show'); $('#hud').classList.remove('show');
+  $('#againBtn').onclick=()=>location.reload(); submitResult(G.code,total,sSteps,tp,S.quizPts,S.endT,passed,S.critical.length);
+  $('#copyBtn').onclick=async()=>{ const ta=$('#json'); ta.value=lastJSON; try{ await navigator.clipboard.writeText(lastJSON); $('#copyBtn').textContent='✓ คัดลอกแล้ว'; }catch(e){ ta.style.display='block'; ta.focus(); ta.select(); $('#copyBtn').textContent='เลือกข้อความด้านล่างแล้วคัดลอก'; } };
+}
+const tScore=(v,a,b)=>v==null?0:v<=a?20:v<=b?12:6;
+const MODS={};
+
+/* ---------- M0 PPE ---------- */
+MODS.M0={code:'M0',icon:'🥼',title:'แต่งกายและสวม PPE ก่อนเข้าปฏิบัติงาน',refs:['LA MT 3.3.1','MT 3.3.2','MT 3.3.3','MT 2.4','HA II-4','HA I-5'],quizRef:'MT 3.3.3',
+  brief:'วันนี้คุณต้อง<b>เตรียมน้ำยาจากกรดเข้มข้น</b>และตรวจตัวอย่างเลือด ไปที่<b>ตู้ PPE</b> บนผนังด้านหลังเพื่อแต่งกายให้ถูกต้อง แล้วไปเริ่มงานที่<b>ขวดสารเคมี</b>บนโต๊ะ',
+  setup(){ removeCoat(PC); setGloves(PC,false); setGlasses(PC,'up'); },
+  interact(id){
+    if(id==='ppe'){ if(did('dress')) toast('แต่งกายเรียบร้อยแล้ว','info'); else this.ppe(); return true; }
+    if(id==='acid'){ if(!did('dress')){ crit('เริ่มงานกับสารเคมีโดยยังไม่สวม PPE','ต้องแต่งกายและสวม PPE ให้ครบก่อนเริ่มงานทุกครั้ง','MT 3.3.2'); } else mark('work','เริ่มงานที่โต๊ะปฏิบัติการ','ok'); endG(); return true; }
+    return false; },
+  ppe(){ const items=[['coat','เสื้อกาวน์แขนยาว ติดกระดุมให้เรียบร้อย'],['gloves','ถุงมือไนไตรล์'],['goggles','แว่นตานิรภัยชนิดครอบตา (goggles)'],['shoes','รองเท้าหุ้มส้น หุ้มปลายเท้า'],['hair','รวบผมให้เรียบร้อย'],['jewel','ถอดแหวน นาฬิกา และเครื่องประดับ'],
+      ['sandal','รองเท้าแตะ (ใส่สบาย)'],['cloth','ถุงมือผ้า'],['short','เสื้อกาวน์แขนสั้น'],['lens','สวมคอนแทคเลนส์แทนแว่นตานิรภัย']];
+    modal('ตู้ PPE · เลือกสิ่งที่ต้องสวม/ทำ',`<div class="form"><p style="margin:0 0 6px">งาน: เตรียมน้ำยาจากกรดเข้มข้น และจับตัวอย่างเลือด (เลือกได้หลายข้อ)</p>${shuffle(items).map(([k,l])=>`<label class="cb"><input type="checkbox" value="${k}"> ${l}</label>`).join('')}</div>`,
+      [{label:'ยืนยันการแต่งกาย',cls:'pri',onClick:()=>{ const sel=[...document.querySelectorAll('.form .cb input:checked')].map(i=>i.value); const p={}; sel.forEach(k=>p[k]=true);
+        p.wrong=['sandal','cloth','short','lens'].filter(k=>p[k]).length; S.ppe=p; mark('dress','แต่งกาย: '+(sel.length?sel.length+' รายการ':'ไม่ได้เลือก'),'info','','MT 3.3.2');
+        if(p.coat||p.short) wearCoat(PC); if(p.gloves||p.cloth) setGloves(PC,true); if(p.goggles) setGlasses(PC,'on');
+        if(p.sandal) crit('สวมรองเท้าแตะเข้าห้องปฏิบัติการ','สารเคมีหรือของมีคมตกใส่เท้าได้ ต้องสวมรองเท้าหุ้มส้นหุ้มปลายเท้า','MT 3.3.2');
+        if(!p.goggles) crit('ไม่สวมแว่นตานิรภัยขณะทำงานกับสารเคมี','สารเคมีกระเด็นเข้าตาได้ ต้องสวมแว่นตานิรภัยทุกครั้ง','MT 3.3.3');
+        if(p.cloth) log('เลือกถุงมือผ้า','warn','ถุงมือผ้าดูดซับสารเคมี ต้องใช้ถุงมือไนไตรล์','MT 3.3.2');
+        if(p.short) log('เลือกเสื้อกาวน์แขนสั้น','warn','ต้องเป็นแขนยาวเพื่อป้องกันแขน','MT 3.3.2');
+        if(p.lens) log('สวมคอนแทคเลนส์แทนแว่นตานิรภัย','warn','คอนแทคเลนส์ไม่ป้องกันการกระเด็น และอาจกักสารเคมีไว้ในตา','MT 3.3.3');
+        fb(p.wrong||!p.goggles?'warn':'ok','แต่งกายเสร็จแล้ว — ไปเริ่มงานที่ขวดสารบนโต๊ะ','แต่งกายเสร็จแล้ว'); }}]); },
+  marker(){ return did('dress')?'acid':'ppe'; },
+  hint(){ return did('dress')?'คลิก<b>ขวดสารเคมี</b>บนโต๊ะเพื่อเริ่มงาน':'ไปที่<b>ตู้ PPE</b> บนผนังด้านหลังเพื่อแต่งกาย'; },
+  score(){ const p=S.ppe||{}; return [R('เสื้อกาวน์แขนยาว',!!p.coat,12,'MT 3.3.2'),R('ถุงมือไนไตรล์',!!p.gloves,12,'MT 3.3.2'),R('แว่นตานิรภัย (goggles)',!!p.goggles,14,'MT 3.3.3'),
+    R('รองเท้าหุ้มส้น หุ้มปลายเท้า',!!p.shoes,10,'MT 3.3.2'),R('รวบผม',!!p.hair,8,'MT 3.3.2'),R('ถอดเครื่องประดับ',!!p.jewel,6,'MT 3.3.2'),R('ไม่เลือกอุปกรณ์ที่ไม่เหมาะสม',S.ppe&&!p.wrong,8,'MT 3.3.1')]; },
+  timeScore(){ return tScore(S.done.work,45,75); },
+  quiz:[{q:'งานเทกรดเข้มข้นที่มีโอกาสกระเด็นสูง ควรเพิ่มการป้องกันอย่างไร',opts:['สวม face shield ร่วมกับแว่นตานิรภัย และทำในตู้ดูดควัน','สวมหน้ากากผ้า','สวมถุงมือผ้าซ้อน 2 ชั้น']},
+        {q:'ควรถอดถุงมือเมื่อใด',opts:['ก่อนจับโทรศัพท์ ลูกบิดประตู หรือออกจากพื้นที่ปฏิบัติงาน','เมื่อเลิกงานกลับบ้าน','ไม่ต้องถอดถ้ายังไม่เปื้อน']}],
+  correct:['สวมเสื้อกาวน์แขนยาวติดกระดุม ถุงมือไนไตรล์ แว่นตานิรภัย รองเท้าหุ้มส้น','รวบผม ถอดเครื่องประดับ ไม่ใช้คอนแทคเลนส์แทนแว่นตานิรภัย','งานเสี่ยงกระเด็นสูงให้เพิ่ม face shield และทำในตู้ดูดควัน','ถอดถุงมือก่อนจับโทรศัพท์หรือออกจากพื้นที่']};
+
+/* ---------- M1 explore ---------- */
+MODS.M1={code:'M1',icon:'🔍',title:'สำรวจอุปกรณ์ความปลอดภัยในห้องปฏิบัติการ',refs:['LA MT 5.1.3.2','MT 5.1.3.4','MT 5.1.3.5','MT 5.1.3.6','HA II-3'],quizRef:'MT 5.1.3.5',
+  T:{eyewash:'ที่ล้างตาฉุกเฉิน',shower:'ฝักบัวฉุกเฉิน',spill:'ชุดจัดการสารเคมีหก',biokit:'ชุดจัดการเชื้อหก',firstaid:'ชุดปฐมพยาบาล',ext:'ถังดับเพลิง',phone:'โทรศัพท์แจ้งเหตุ',door:'ทางออก',sds:'แฟ้ม SDS',alarm:'สัญญาณแจ้งเหตุเพลิงไหม้'},
+  F:{eyewash:'ต้องไปถึงได้ภายใน 10 วินาที ล้างอย่างน้อย 15 นาที',shower:'ใช้เมื่อสารเคมีหกรดร่างกายปริมาณมาก',spill:'ใช้กับสารเคมีหก วางวัสดุดูดซับจากขอบเข้าหากลาง',biokit:'ใช้กับเลือด/สิ่งส่งตรวจหก ร่วมกับน้ำยาฆ่าเชื้อ',firstaid:'ตรวจของหมดอายุเป็นระยะ',ext:'ชนิด CO₂ เหมาะกับไฟจากอุปกรณ์ไฟฟ้า',phone:'เบอร์แจ้งเหตุภายใน 1111',door:'รู้เส้นทางหนีไฟ ห้ามใช้ลิฟต์',sds:'มีข้อมูลอันตรายและวิธีปฐมพยาบาลของสารทุกชนิด',alarm:'ดึงเพื่อแจ้งเหตุเพลิงไหม้ทั้งอาคาร'},
+  brief:'ก่อนเริ่มปฏิบัติงาน ให้<b>ค้นหาและคลิกอุปกรณ์ความปลอดภัยให้ครบ 10 จุด</b> ภายใน 120 วินาที ระวังของที่ไม่ใช่อุปกรณ์ฉุกเฉิน',
+  found(){ return Object.keys(this.T).filter(k=>did('f_'+k)).length; },
+  interact(id){
+    if(this.T[id]){ if(mark('f_'+id,'พบ: '+this.T[id],'ok','','MT 5.1.3.2')){ fb('ok','✓ พบ'+this.T[id]+' — '+this.F[id],'✓ พบ'+this.T[id]); burst(P.x,1.8,P.z,0xfde68a,8,0.7,0.025,1,0.7); if(this.found()===10) endG(); } else toast('พบไปแล้ว','info'); return true; }
+    if(id==='sink'){ if(mark('x_sink','เลือกอ่างล้างมือเป็นอุปกรณ์ล้างตาฉุกเฉิน','warn','อ่างล้างมือไม่ใช่ที่ล้างตาฉุกเฉิน','MT 5.1.3.2')) fb('warn','อ่างล้างมือไม่ใช่ที่ล้างตาฉุกเฉิน','อ่างล้างมือ'); return true; }
+    toast(INTER[id].name+' — ไม่นับเป็นอุปกรณ์ฉุกเฉิน','info'); return true; },
+  update(){ if(t()>=120&&!S.ending){ toast('หมดเวลา!','warn'); endG(); } },
+  chip(){ const r=Math.max(0,120-t()); return {html:`พบแล้ว <b>${this.found()}/10</b> · เหลือ <b>${Math.ceil(r)}</b> วินาที`,red:r<20}; },
+  marker(){ if(t()<25) return null; let best=null,bd=1e9; for(const k in this.T){ if(did('f_'+k)) continue; const d=Math.hypot(INTER[k].ax-P.x,INTER[k].az-P.z); if(d<bd){bd=d;best=k;} } return best; },
+  hint(){ return t()<25?'เดินสำรวจห้อง แล้วคลิกอุปกรณ์ความปลอดภัยที่พบ':'หมุด <b>!</b> จะชี้จุดที่ยังไม่พบ'; },
+  score(){ const r=Object.keys(this.T).map(k=>R(this.T[k],did('f_'+k),6,k==='ext'||k==='alarm'?'MT 5.1.3.5':k==='firstaid'?'MT 5.1.3.4':k==='phone'?'MT 5.1.3.6':'MT 5.1.3.2')); r.push(R('ไม่สับสนอ่างล้างมือกับที่ล้างตา',!did('x_sink'),10,'MT 5.1.3.2')); return r; },
+  timeScore(){ if(this.found()<10) return this.found()>=8?6:0; const last=Math.max(...Object.keys(this.T).map(k=>S.done['f_'+k])); return tScore(last,60,90); },
+  quiz:[{q:'ผู้ที่สารเคมีเข้าตาควรไปถึงที่ล้างตาฉุกเฉินได้ภายในเวลาเท่าใด',opts:['10 วินาที','1 นาที','5 นาที']},
+        {q:'ถังดับเพลิงชนิดใดเหมาะกับไฟที่เกิดจากอุปกรณ์ไฟฟ้า',opts:['คาร์บอนไดออกไซด์ (CO₂)','ถังน้ำ (Water)','ถังโฟม (Foam)']}],
+  correct:['ที่ล้างตาและฝักบัวฉุกเฉิน','ชุดจัดการสารเคมีหก และชุดจัดการเชื้อหก','ชุดปฐมพยาบาล ถังดับเพลิง และสัญญาณแจ้งเหตุเพลิงไหม้','โทรศัพท์แจ้งเหตุ แฟ้ม SDS และทางออก','อ่างล้างมือใช้แทนที่ล้างตาฉุกเฉินไม่ได้']};
+
+/* ---------- M2 blood spill ---------- */
+MODS.M2={code:'M2',icon:'🩸',title:'สิ่งส่งตรวจ (เลือด) หกแตก',refs:['LA MT 5.1.3.2','MT 5.5.3.2','MT 5.1.3.8','HA II-4 IC'],quizRef:'MT 5.1.3.2',
+  brief:'ขณะคุณกำลังเรียงหลอดเลือด แร็คหลอดเลือดหล่นลงพื้น <b>หลอดแตกและเลือดกระจายบนพื้น</b> จัดการตามขั้นตอนอย่างปลอดภัย',
+  start(){ const g=new THREE.Group(); scene.add(g); this.g=g;
+    const pd=new THREE.Mesh(new THREE.CircleGeometry(0.38,28),mat(0x8a1414,{roughness:0.25})); pd.rotation.x=-Math.PI/2; pd.scale.set(1,0.7,1); pd.position.set(3.3,0.012,-1.45); g.add(pd);
+    for(let i=0;i<7;i++){ const d=new THREE.Mesh(new THREE.CircleGeometry(0.03+Math.random()*0.04,10),mat(0x8a1414)); d.rotation.x=-Math.PI/2; d.position.set(3.3+(Math.random()-0.5)*1.1,0.013,-1.45+(Math.random()-0.5)*0.8); g.add(d); }
+    for(let i=0;i<6;i++){ const s=cyl(0.012,0.012,0.05+Math.random()*0.04,mat(0xeaf4f8,{transparent:true,opacity:0.8}),3.15+Math.random()*0.35,0.02,-1.6+Math.random()*0.3,g); s.rotation.set(Math.PI/2,0,Math.random()*3); }
+    rbox(0.44,0.08,0.13,mat(0x4a8fd6),3.75,0.05,-1.25,g,0.02).rotation.z=0.3;
+    this.pad=rbox(0.7,0.015,0.5,mat(0xfaf6ef),3.3,0.02,-1.45,g,0.005); this.pad.visible=false;
+    const hb=box(1.2,0.3,0.9,new THREE.MeshBasicMaterial({visible:false}),3.3,0.15,-1.45,g); hb.castShadow=false; reg(g,'bspill','คราบเลือดและเศษหลอดแตก',3.3,-0.7);
+    toast('💥 หลอดเลือดตกแตก! เลือดกระจายบนพื้น','crit',4500); beep(900,0.15,0.06,'triangle'); },
+  actions:[{id:'alert',label:'📢 เตือนคนรอบข้าง / กั้นพื้นที่',run(){ if(mark('alert','เตือนคนรอบข้างและกั้นพื้นที่','ok','','MT 5.1.3.2')){ S.help=true; S.helpT=t(); say(PC,'ระวัง! เลือดหก ห้ามเดินผ่าน',2.5); PC.override='help'; PC.overT=1.1; fb('ok','📢 เตือนแล้ว — พี่หัวหน้ากำลังมาช่วยกั้นพื้นที่','📢 คุณเตือนคนรอบข้าง'); } },disabled:()=>did('alert')}],
+  interact(id){
+    if(id==='spill'&&!did('kit')){ mark('wrongkit','หยิบชุดจัดการสารเคมีหก','warn','เลือดต้องใช้ชุดจัดการเชื้อหก (Biological spill kit)','MT 5.1.3.2'); fb('warn','ชุดนี้สำหรับสารเคมี — เลือดต้องใช้ชุดจัดการเชื้อหก (สีส้ม)','คุณเปิดชุดจัดการสารเคมีหก'); return true; }
+    if(id==='biokit'){ if(mark('kit','หยิบชุดจัดการเชื้อหก (Biological spill kit)','ok','','MT 5.1.3.2')) fb('ok','✓ ได้ชุดจัดการเชื้อหกแล้ว ไปที่คราบเลือด','ได้ชุดจัดการเชื้อหกแล้ว'); else toast('ถือชุดอยู่แล้ว','info'); return true; }
+    if(id==='bspill'){ if(did('clean')){ toast(did('dispose')?'ทำความสะอาดเรียบร้อยแล้ว':'นำถุงขยะไปทิ้งที่ถังขยะติดเชื้อ (ถุงแดง)','info'); return true; }
+      if(!did('kit')){ fb('warn','ต้องนำชุดจัดการเชื้อหกมาก่อน (ตู้สีส้มผนังด้านหลัง)','ยังไม่มีอุปกรณ์ทำความสะอาด'); return true; }
+      seqModal('clean','จัดการเลือดหก','คุณอยู่ที่คราบเลือดพร้อมชุดจัดการเชื้อหก',
+        ['สวม PPE: ถุงมือ 2 ชั้น เสื้อกาวน์ แว่นตา/face shield','ใช้คีมหรือที่ตักเก็บเศษแก้ว ทิ้งลงภาชนะของมีคม','วางกระดาษซับคลุมคราบเลือด','ราดน้ำยาฆ่าเชื้อ (เช่น 0.5% sodium hypochlorite) จากขอบเข้าหากลาง','รอให้ครบ contact time ตามคู่มือของหน่วยงาน','เก็บวัสดุทั้งหมดใส่ถุงขยะติดเชื้อ (ถุงแดง)','เช็ดซ้ำด้วยน้ำยาฆ่าเชื้อ ถอดถุงมือ และล้างมือ'],
+        [{label:'เก็บเศษแก้วด้วยมือ (ใส่ถุงมือแล้ว)',type:'crit',note:'เศษแก้วบาดทะลุถุงมือได้ ต้องใช้คีมหรือที่ตัก',ref:'MT 5.1.3.2'},{label:'เช็ดคราบทันทีโดยไม่ต้องรอน้ำยาออกฤทธิ์',type:'crit',note:'ต้องรอให้ครบ contact time เชื้อจึงถูกทำลาย',ref:'MT 5.1.3.2'},
+         {label:'ราดน้ำยาจากกลางคราบออกไปที่ขอบ',type:'warn',note:'ทำให้คราบกระจายกว้างขึ้น ต้องราดจากขอบเข้าหากลาง'},{label:'ใช้น้ำล้างคราบลงท่อระบายน้ำ',type:'crit',note:'ทำให้เชื้อแพร่กระจายและไม่ถูกทำลาย',ref:'MT 5.1.3.2'}],
+        r=>{ mark('clean','จัดการคราบเลือดตามขั้นตอนเสร็จ (ลำดับถูก '+Math.round(r.ratio*100)+'%)',r.ratio>=0.85?'ok':'warn','','MT 5.1.3.2'); this.g.children.forEach(c=>{ if(c!==this.pad&&c.isMesh&&c.material.visible!==false) c.visible=false; }); this.pad.visible=true; fb('ok','เก็บกวาดเสร็จ นำถุงขยะไปทิ้งที่ถังขยะติดเชื้อ (ถุงแดง)','เก็บกวาดเสร็จ'); });
+      return true; }
+    if(id==='redbin'&&did('clean')){ if(mark('dispose','ทิ้งถุงขยะติดเชื้อในถังถุงแดง','ok','','MT 5.5.3.2')){ this.pad.visible=false; endG(); } return true; }
+    if(id==='genbin'&&did('clean')){ crit('ทิ้งขยะปนเลือดในถังขยะทั่วไป','ขยะปนเลือดต้องทิ้งในถุงแดง (ขยะติดเชื้อ)','MT 5.5.3.2'); mark('dispose','ทิ้งถุงขยะ (ผิดถัง)','crit'); endG(); return true; }
+    return false; },
+  marker(){ return !did('kit')?'biokit':!did('clean')?'bspill':'redbin'; },
+  hint(){ return !did('alert')?'<b>เตือนคนรอบข้าง</b> แล้วไปหยิบ<b>ชุดจัดการเชื้อหก (สีส้ม)</b>':!did('kit')?'ไปหยิบ<b>ชุดจัดการเชื้อหก (สีส้ม)</b> ที่ผนังด้านหลัง':!did('clean')?'ไปที่<b>คราบเลือด</b>เพื่อจัดการตามขั้นตอน':'นำถุงขยะไปทิ้งที่<b>ถังขยะติดเชื้อ (ถุงแดง)</b>'; },
+  npcText(){ return did('clean')?'ทิ้งถุงแดงให้เรียบร้อยนะ':'พี่กั้นพื้นที่ให้แล้ว ใช้ชุดสีส้มนะ'; },
+  score(){ const q=S.seq.clean||{ratio:0}; return [R('เตือนคนรอบข้าง / กั้นพื้นที่',did('alert'),8,'MT 5.1.3.2'),R('เลือกชุดจัดการเชื้อหกถูกชนิด',did('kit'),10,'MT 5.1.3.2'),R('ไม่หยิบชุดผิดประเภท',!did('wrongkit'),5,'MT 5.1.3.2'),
+    R('ทำความสะอาดครบทุกขั้นตอน',did('clean'),12,'MT 5.1.3.2'),R(`ลำดับขั้นตอนถูกต้อง (${Math.round(q.ratio*100)}%)`,Math.round(25*q.ratio),25,'MT 5.1.3.2'),R('ทิ้งขยะในถังขยะติดเชื้อ (ถุงแดง)',did('dispose')&&!S.critical.find(c=>c.action.includes('ถังขยะทั่วไป')),10,'MT 5.5.3.2')]; },
+  timeScore(){ return tScore(S.done.kit,35,60); },
+  quiz:[{q:'น้ำยาฆ่าเชื้อที่เหมาะกับคราบเลือดหกบนพื้น',opts:['Sodium hypochlorite 0.5% (หรือตามคู่มือของหน่วยงาน)','น้ำเปล่าผสมสบู่','แอลกอฮอล์ 70% เพียงอย่างเดียวโดยไม่ต้องรอ']},
+        {q:'หลังเหตุการณ์ต้องทำอย่างไร',opts:['บันทึกรายงานอุบัติการณ์ในระบบบริหารความเสี่ยง','ไม่ต้องรายงานถ้าไม่มีคนบาดเจ็บ','แจ้งเพื่อนด้วยวาจาก็พอ']}],
+  correct:['เตือนคนรอบข้างและกั้นพื้นที่','หยิบชุดจัดการเชื้อหก (Biological spill kit) และสวม PPE','ใช้คีม/ที่ตักเก็บเศษแก้วทิ้งภาชนะของมีคม — ห้ามใช้มือ','วางกระดาษซับ ราดน้ำยาฆ่าเชื้อจากขอบเข้าหากลาง แล้วรอ contact time','เก็บทุกอย่างใส่ถุงแดง เช็ดซ้ำ ล้างมือ และรายงานอุบัติการณ์']};
+
+/* ---------- M4 needlestick ---------- */
+MODS.M4={code:'M4',icon:'💉',title:'เข็มตำ / สัมผัสเลือดผู้ป่วย',refs:['LA MT 5.1.3.8','MT 5.3.2.3','MT 2.8.2','MT 2.7.4','HA I-5','2P Safety (Personnel)'],quizRef:'MT 5.1.3.8',
+  brief:'คุณเพิ่งเจาะเลือดผู้ป่วยเสร็จ และ<b>พยายามสวมปลอกเข็มกลับ</b> ก่อนทิ้ง… <b>เข็มตำนิ้ว!</b> จัดการตามขั้นตอนหลังสัมผัสเลือด',
+  setup(){ syringeG.visible=true; },
+  start(){ toast('💉 เข็มที่ใช้แล้วตำนิ้วมือ! มีเลือดซึม','crit',4500); log('เกิดเหตุ: เข็มตำขณะสวมปลอกเข็มกลับ (recap)','warn','ห้ามสวมปลอกเข็มกลับ','MT 5.3.2.3'); PC.shakeT=1.2; burst(P.x,1.0,P.z,0xb91c1c,6,0.5,0.015,2,0.5); },
+  actions:[{id:'notify',label:'📢 แจ้งหัวหน้างานทันที',run(){ if(mark('notify','แจ้งหัวหน้างานทันที','ok','','MT 5.1.3.8')){ S.help=true; S.helpT=t(); say(PC,'พี่คะ เข็มตำค่ะ!',2.2); fb('ok','📢 แจ้งแล้ว — พี่หัวหน้ากำลังมาช่วย','📢 คุณแจ้งหัวหน้างาน'); } },disabled:()=>did('notify')},
+    {id:'source',label:'📋 ระบุผู้ป่วยต้นทาง (source)',run(){ if(mark('source','ระบุผู้ป่วยต้นทาง (HN) เพื่อส่งตรวจ HBV/HCV/HIV','ok','','MT 5.1.3.8')) fb('ok','📋 บันทึก HN ผู้ป่วยต้นทางแล้ว','📋 บันทึกข้อมูลผู้ป่วยต้นทาง'); },disabled:()=>did('source')},
+    {id:'squeeze',label:'🩸 บีบเค้นเลือดออกจากแผล',run(){ if(mark('squeeze','บีบเค้นเลือดออกจากแผล','warn','ไม่ควรบีบเค้น ให้เลือดไหลตามธรรมชาติแล้วล้างด้วยน้ำและสบู่','MT 5.1.3.8')) fb('warn','ไม่ควรบีบเค้นแผล — ให้ล้างด้วยน้ำสะอาดและสบู่','คุณบีบแผล'); },disabled:()=>did('squeeze')}],
+  interact(id){
+    if(id==='sink'){ if(did('wash')){ toast('ล้างแผลแล้ว','info'); return true; }
+      choiceModal('อ่างล้างมือ','<p>จะทำความสะอาดแผลอย่างไร?</p>',[
+        {label:'ล้างแผลด้วยน้ำสะอาดและสบู่ ปล่อยให้เลือดไหลตามธรรมชาติ',run:()=>{ mark('wash','ล้างแผลด้วยน้ำสะอาดและสบู่','ok','','MT 5.1.3.8'); fb('ok','✓ ล้างแผลถูกวิธี ปิดแผลแล้วแจ้งหัวหน้า','ล้างแผลแล้ว'); }},
+        {label:'ราดแผลด้วยแอลกอฮอล์หรือน้ำยาฟอกขาว',run:()=>{ mark('wash','ล้างแผลด้วยสารระคายเคือง','warn','ไม่ควรใช้สารระคายเคืองกับแผล','MT 5.1.3.8'); mark('irritant','ใช้สารระคายเคือง','warn'); fb('warn','ไม่ควรใช้สารระคายเคือง — ใช้น้ำสะอาดและสบู่','ล้างแผลแล้ว'); }},
+        {label:'ใช้ปากดูดเลือดออกจากแผล',run:()=>{ crit('ใช้ปากดูดแผล','เพิ่มการสัมผัสเลือดทางเยื่อบุ','MT 5.1.3.8'); mark('wash','ใช้ปากดูดแผล','crit'); }}]); return true; }
+    if(id==='eyewash'){ fb('warn','ที่ล้างตาใช้สำหรับดวงตา แผลเข็มตำให้ล้างที่อ่างด้วยน้ำและสบู่','ที่ล้างตาฉุกเฉิน'); return true; }
+    if(id==='sharps'){ if(mark('sharps','ทิ้งเข็มลงภาชนะของมีคมโดยไม่สวมปลอก','ok','','MT 5.3.2.3')){ syringeG.visible=false; fb('ok','✓ ทิ้งเข็มลงภาชนะของมีคมแล้ว','ทิ้งเข็มแล้ว'); } return true; }
+    if(id==='genbin'||id==='redbin'){ if(!did('sharps')){ crit('ทิ้งเข็มลงถุงขยะ','เข็มทะลุถุงและตำผู้อื่นได้ ต้องทิ้งในภาชนะของมีคม','MT 5.3.2.3'); syringeG.visible=false; mark('sharps','ทิ้งเข็มผิดที่','crit'); } return true; }
+    if(id==='door'){ if(!did('wash')){ crit('ออกไปโดยยังไม่ล้างแผล','ต้องล้างแผลด้วยน้ำสะอาดและสบู่ทันที','MT 5.1.3.8'); } mark('doctor','ไปพบแพทย์เพื่อประเมินการรับยาป้องกัน (PEP)','ok','','MT 5.1.3.8'); endG(); return true; }
+    return false; },
+  expr(){ return did('wash')?'happy':'hurt'; },
+  marker(){ return !did('wash')?'sink':!did('sharps')?'sharps':'door'; },
+  hint(){ return !did('wash')?'ไปล้างแผลที่<b>อ่างล้างมือ</b> แล้วแจ้งหัวหน้างาน':!did('notify')?'<b>แจ้งหัวหน้างานทันที</b> (ปุ่มด้านล่าง)':!did('source')?'<b>ระบุผู้ป่วยต้นทาง</b> เพื่อส่งตรวจ':!did('sharps')?'ทิ้งเข็มลง<b>ภาชนะของมีคม</b> (กล่องเหลือง บนโต๊ะ)':'ไปพบแพทย์ — คลิก<b>ประตูทางออก</b>'; },
+  npcText(){ return did('source')?'รีบไปพบแพทย์ภายใน 2 ชั่วโมงนะ':'ระบุผู้ป่วยต้นทางไว้ด้วยนะ'; },
+  score(){ return [R('ล้างแผลด้วยน้ำสะอาดและสบู่',did('wash')&&!did('irritant')&&!S.critical.find(c=>c.action==='ใช้ปากดูดแผล'),18,'MT 5.1.3.8'),R('ล้างแผลที่อ่างล้างมือก่อนทำอย่างอื่น',did('wash')&&['notify','source','sharps','doctor'].every(k=>!did(k)||S.done[k]>=S.done.wash),6,'MT 5.1.3.8'),
+    R('แจ้งหัวหน้างานทันที',did('notify'),12,'MT 5.1.3.8'),R('ระบุผู้ป่วยต้นทาง',did('source'),12,'MT 5.1.3.8'),R('ทิ้งเข็มลงภาชนะของมีคม',did('sharps')&&!S.critical.find(c=>c.action==='ทิ้งเข็มลงถุงขยะ'),10,'MT 5.3.2.3'),
+    R('ไม่บีบเค้นแผล',!did('squeeze'),6,'MT 5.1.3.8'),R('ไปพบแพทย์เพื่อประเมิน PEP',did('doctor')&&did('notify'),6,'MT 2.7.4')]; },
+  timeScore(){ return tScore(S.done.wash,30,60); },
+  quiz:[{q:'หลังเข็มตำ ควรพบแพทย์เพื่อประเมินการรับยาป้องกัน (PEP) เมื่อใด',opts:['โดยเร็วที่สุด ภายใน 1–2 ชั่วโมง','ภายใน 1 สัปดาห์','เมื่อมีอาการไข้']},
+        {q:'วิธีทิ้งเข็มที่ใช้แล้วที่ถูกต้อง',opts:['ทิ้งลงภาชนะของมีคมทันที ห้ามสวมปลอกเข็มกลับ','สวมปลอกเข็มด้วยสองมือก่อนทิ้ง','หักงอเข็มก่อนทิ้งลงถุงแดง']},
+        {q:'วัคซีนที่บุคลากรห้องปฏิบัติการควรได้รับและตรวจภูมิคุ้มกัน',opts:['ไวรัสตับอักเสบบี (HBV)','ไข้เหลือง','พิษสุนัขบ้า']}],
+  correct:['ห้ามสวมปลอกเข็มกลับ ทิ้งลงภาชนะของมีคมทันที','ล้างแผลด้วยน้ำสะอาดและสบู่ ไม่บีบเค้น ไม่ใช้สารระคายเคือง','แจ้งหัวหน้างานทันที และระบุผู้ป่วยต้นทางเพื่อส่งตรวจ','พบแพทย์เพื่อประเมิน PEP ภายใน 1–2 ชั่วโมง','บันทึกรายงานอุบัติการณ์และติดตามผลตรวจ']};
+
+/* ---------- M5 fire ---------- */
+MODS.M5={code:'M5',icon:'🔥',title:'ไฟไหม้จากเครื่องมือไฟฟ้า',refs:['LA MT 5.1.3.5','MT 5.1.3.6','HA II-3 (อัคคีภัย)'],quizRef:'MT 5.1.3.5',noNPC:true,
+  brief:'<b>เครื่องปั่นเหวี่ยงบนโต๊ะเกิดไฟลุก</b> จากไฟฟ้าลัดวงจร มีควันออกมา ใช้หลัก <b>RACE</b> และ <b>PASS</b> รับมืออย่างปลอดภัย',
+  start(){ const g=new THREE.Group(); g.position.set(1.9,1.12,-0.15); scene.add(g); this.g=g; this.fl=[]; const cols=[0xff5a00,0xff9a1a,0xffd24d];
+    for(let i=0;i<8;i++){ const m=new THREE.Mesh(new THREE.ConeGeometry(0.05+Math.random()*0.06,0.22+Math.random()*0.25,8),new THREE.MeshBasicMaterial({color:cols[i%3],transparent:true,opacity:0.85})); m.position.set((Math.random()-0.5)*0.24,0.12,(Math.random()-0.5)*0.24); m.userData.ph=Math.random()*6; g.add(m); this.fl.push(m); }
+    this.L=new THREE.PointLight(0xff7a1a,1.6,6); this.L.position.y=0.3; g.add(this.L);
+    const hb=box(0.6,0.7,0.6,new THREE.MeshBasicMaterial({visible:false}),0,0.2,0,g); hb.castShadow=false; reg(g,'fire','จุดที่เกิดไฟไหม้ (เครื่องปั่นเหวี่ยง)',3.25,-0.15);
+    this.level=1; toast('🔥 เครื่องปั่นเหวี่ยงไฟลุก! มีควันออกมา','crit',4500); beep(440,0.3,0.08,'square'); },
+  update(dt,time){ if(!this.g) return;
+    if(!did('out')&&!this.big&&t()>50){ this.big=true; mark('big','ไฟลุกลามเกินกำลังดับด้วยถังดับเพลิง','warn','ต้องอพยพออกจากพื้นที่ทันที','MT 5.1.3.5'); toast('⚠️ ไฟลุกลามเกินกำลัง! อพยพออกทันที','crit',5000); }
+    const target=did('out')?0:(this.big?2.3:1); this.level+=(target-this.level)*Math.min(1,dt*1.5); this.g.scale.setScalar(Math.max(0.001,this.level)); this.g.visible=this.level>0.03;
+    this.fl.forEach(m=>{ m.scale.y=0.7+0.5*Math.abs(Math.sin(time*9+m.userData.ph)); m.rotation.y=time*2+m.userData.ph; }); this.L.intensity=(1.3+Math.random()*0.6)*this.level;
+    this.sm=(this.sm||0)+dt; if(this.sm>(did('out')?0.25:0.06)){ this.sm=0; spawn(1.9+(Math.random()-0.5)*0.3*this.level,1.25+0.3*this.level,-0.15+(Math.random()-0.5)*0.3,(Math.random()-0.5)*0.15,0.4,(Math.random()-0.5)*0.15,0x6b6b6b,2.2,0.09+0.05*this.level,-0.15); }
+    if(did('alarm')&&!S.ending){ this.ab=(this.ab||0)+dt; if(this.ab>0.9){ this.ab=0; beep(1250,0.18,0.05,'square'); } } },
+  urgent(){ return !did('out'); },
+  actions:[{id:'shout',label:'📢 ตะโกน "ไฟไหม้!" ให้ทุกคนออกจากห้อง',run(){ if(mark('rescue','ตะโกนเตือนให้ทุกคนออกจากพื้นที่ (Rescue)','ok','','MT 5.1.3.5')){ say(PC,'ไฟไหม้! ทุกคนออกไปก่อน!',2.5); PC.override='help'; PC.overT=1.1; fb('ok','📢 R – Rescue: เตือนทุกคนแล้ว','📢 คุณตะโกนเตือน'); } },disabled:()=>did('rescue')},
+    {id:'water',label:'🪣 สาดน้ำจากอ่างล้างมือดับไฟ',run(){ crit('ใช้น้ำดับไฟจากอุปกรณ์ไฟฟ้า','เสี่ยงไฟฟ้าดูดและไฟลุกลาม ต้องตัดไฟและใช้ถังดับเพลิง CO₂','MT 5.1.3.5'); }}],
+  interact(id){
+    if(id==='alarm'||id==='phone'){ if(mark('alarm',id==='alarm'?'ดึงสัญญาณแจ้งเหตุเพลิงไหม้ (Alarm)':'โทรแจ้งเหตุเพลิงไหม้ 1111 (Alarm)','ok','','MT 5.1.3.6')) fb('ok','🔔 A – Alarm: แจ้งเหตุแล้ว','🔔 แจ้งเหตุแล้ว'); else toast('แจ้งเหตุไปแล้ว','info'); return true; }
+    if(id==='panel'){ if(mark('power','ตัดกระแสไฟฟ้าที่ตู้เบรกเกอร์ (Confine)','ok','','MT 5.1.3.5')) fb('ok','⚡ C – Confine: ตัดไฟแล้ว','⚡ ตัดไฟแล้ว'); return true; }
+    if(id==='ext'){ if(this.big){ fb('warn','ไฟใหญ่เกินกำลังแล้ว — อพยพออกทางประตู','ถังดับเพลิง'); return true; }
+      if(did('pickext')){ toast('ถือถังดับเพลิงอยู่แล้ว','info'); return true; }
+      choiceModal('ถังดับเพลิง','<p>ไฟเกิดจาก<b>อุปกรณ์ไฟฟ้า</b> จะใช้อะไรดับ?</p>',[
+        {label:'ถังดับเพลิงชนิด CO₂ (ถังนี้)',run:()=>{ mark('pickext','หยิบถังดับเพลิง CO₂','ok','','MT 5.1.3.5'); fb('ok','✓ หยิบถัง CO₂ แล้ว เข้าใกล้ไฟในระยะ 2–3 เมตร','หยิบถังดับเพลิงแล้ว'); }},
+        {label:'ถังน้ำ (Water) จากอีกห้อง',run:()=>crit('เลือกใช้น้ำดับไฟจากอุปกรณ์ไฟฟ้า','เสี่ยงไฟฟ้าดูด ต้องใช้ CO₂ หรือผงเคมีแห้ง','MT 5.1.3.5')},
+        {label:'ผ้าเปียกตบไฟ',run:()=>{ log('เลือกใช้ผ้าเปียกตบไฟ','warn','ไม่เหมาะกับไฟจากไฟฟ้า','MT 5.1.3.5'); fb('warn','ผ้าเปียกไม่เหมาะกับไฟจากไฟฟ้า','คุณเลือกผ้าเปียก'); }}]); return true; }
+    if(id==='fire'){ if(did('out')){ toast('ไฟดับแล้ว','info'); return true; }
+      if(this.big){ crit('พยายามดับไฟที่ลุกลามเกินกำลัง','ต้องอพยพทันทีและรอหน่วยดับเพลิง','MT 5.1.3.5'); return true; }
+      if(!did('pickext')){ fb('warn','ต้องมีถังดับเพลิงก่อน (ผนังซ้าย)','ยังไม่มีอุปกรณ์ดับไฟ'); return true; }
+      seqModal('pass','ใช้ถังดับเพลิง (PASS)','คุณยืนห่างไฟประมาณ 2–3 เมตร เหนือลม',['Pull – ดึงสลักนิรภัย','Aim – เล็งหัวฉีดไปที่ฐานของไฟ','Squeeze – บีบคันบีบ','Sweep – ส่ายหัวฉีดซ้าย-ขวาจนไฟดับ'],
+        [{label:'เล็งหัวฉีดไปที่เปลวไฟด้านบน',type:'warn',note:'ต้องเล็งที่ฐานของไฟ'},{label:'เดินเข้าไปชิดไฟในระยะ 30 ซม.',type:'warn',note:'ควรห่าง 2–3 เมตร'}],
+        r=>{ mark('out','ดับไฟสำเร็จ (Extinguish) — ลำดับ PASS ถูก '+Math.round(r.ratio*100)+'%',r.ratio>=0.75?'ok':'warn','','MT 5.1.3.5'); for(let i=0;i<30;i++) spawn(P.x,1.0,P.z,(1.9-P.x)*1.2+(Math.random()-0.5)*0.6,0.3+Math.random()*0.3,(-0.15-P.z)*1.2+(Math.random()-0.5)*0.6,0xf1f5f9,0.9,0.05,0.5); fb('ok','🧯 ไฟดับแล้ว! ออกจากห้องและรายงานเหตุ','ไฟดับแล้ว'); });
+      return true; }
+    if(id==='door'){ if(!did('alarm')) log('ออกจากห้องโดยยังไม่แจ้งเหตุ','warn','ต้องแจ้งเหตุ (Alarm) ทุกครั้ง','MT 5.1.3.6'); mark('evac','ออกจากพื้นที่ทางประตูหนีไฟ ปิดประตูตาม','ok','','MT 5.1.3.5'); endG(); return true; }
+    if(id==='sink'){ crit('ใช้น้ำดับไฟจากอุปกรณ์ไฟฟ้า','เสี่ยงไฟฟ้าดูดและไฟลุกลาม','MT 5.1.3.5'); return true; }
+    return false; },
+  marker(){ if(this.big||did('out')) return 'door'; return !did('alarm')?'alarm':!did('power')?'panel':!did('pickext')?'ext':'fire'; },
+  hint(){ if(this.big) return 'ไฟลุกลามเกินกำลัง — <b>อพยพออกทางประตู</b>'; if(did('out')) return 'ไฟดับแล้ว — ออกทาง<b>ประตู</b>เพื่อรายงานเหตุ';
+    return !did('rescue')?'<b>R</b> – ตะโกนเตือนทุกคน (ปุ่มด้านล่าง)':!did('alarm')?'<b>A</b> – ดึง<b>สัญญาณแจ้งเหตุเพลิงไหม้</b> (ผนังด้านหลัง)':!did('power')?'<b>C</b> – ตัดไฟที่<b>ตู้ไฟฟ้า</b> (มุมขวาด้านหลัง)':!did('pickext')?'<b>E</b> – หยิบ<b>ถังดับเพลิง</b> (ผนังซ้าย)':'เข้าใกล้<b>จุดไฟไหม้</b> แล้วใช้หลัก PASS'; },
+  chip(){ if(did('out')||this.big) return null; const r=Math.max(0,50-t()); return {html:`ไฟจะลุกลามใน <b>${Math.ceil(r)}</b> วินาที`,red:r<15}; },
+  score(){ const q=S.seq.pass||{ratio:0}, fought=did('out'); return [R('R – ตะโกนเตือนให้ทุกคนออก',did('rescue'),12,'MT 5.1.3.5'),R('A – แจ้งเหตุ (สัญญาณ/โทร 1111)',did('alarm'),12,'MT 5.1.3.6'),R('C – ตัดกระแสไฟฟ้า',did('power'),10,'MT 5.1.3.5'),
+    R('เลือกถังดับเพลิง CO₂',did('pickext')||this.big,8,'MT 5.1.3.5'),R(fought?`E – PASS ถูกลำดับ (${Math.round(q.ratio*100)}%)`:'E – ประเมินแล้วไม่ฝืนดับไฟที่เกินกำลัง',fought?Math.round(16*q.ratio):(this.big&&did('evac')?16:0),16,'MT 5.1.3.5'),
+    R('ไฟดับ หรืออพยพทันเวลา',fought||(this.big&&did('evac')),6,'MT 5.1.3.5'),R('ออกจากพื้นที่ทางประตูหนีไฟ',did('evac'),6,'MT 5.1.3.5')]; },
+  timeScore(){ return tScore(S.done.alarm,15,30); },
+  quiz:[{q:'RACE ย่อมาจากอะไร',opts:['Rescue – Alarm – Confine – Extinguish/Evacuate','Run – Alert – Call – Escape','Remove – Act – Clean – Exit']},
+        {q:'สิ่งที่ห้ามใช้ดับไฟจากอุปกรณ์ไฟฟ้า',opts:['น้ำ','ถังดับเพลิง CO₂','ถังผงเคมีแห้ง']},
+        {q:'เมื่อต้องอพยพจากอาคารที่เกิดไฟไหม้',opts:['ใช้บันไดหนีไฟ ห้ามใช้ลิฟต์','ใช้ลิฟต์เพราะเร็วกว่า','กลับไปเก็บเอกสารก่อน']}],
+  correct:['R – Rescue: เตือนและช่วยผู้อยู่ใกล้ไฟออกจากพื้นที่','A – Alarm: ดึงสัญญาณแจ้งเหตุ หรือโทร 1111','C – Confine: ตัดไฟฟ้า ปิดประตูจำกัดไฟ','E – Extinguish: ใช้ถัง CO₂ หลัก PASS (ดึงสลัก เล็งฐานไฟ บีบ ส่าย) — หากไฟเกินกำลังให้ Evacuate ทันที','ห้ามใช้น้ำกับไฟจากไฟฟ้า ห้ามใช้ลิฟต์']};
+
+/* ---------- M6 gas leak ---------- */
+MODS.M6={code:'M6',icon:'💨',title:'แก๊สรั่วในห้องปฏิบัติการ',refs:['LA MT 5.1.3.5','MT 5.1.2.1','MT 5.1.3.6','HA II-3'],quizRef:'MT 5.1.3.5',noNPC:true,
+  brief:'คุณเดินเข้าห้องแล้ว<b>ได้กลิ่นแก๊สฉุนและได้ยินเสียงฟู่</b> บริเวณวาล์วแก๊สข้างตู้ดูดควัน จัดการอย่างปลอดภัย',
+  start(){ toast('💨 ได้กลิ่นแก๊ส! มีเสียงฟู่จากวาล์วแก๊ส','crit',4500); },
+  hiss(){ return !did('valve'); },
+  update(dt){ this.ac=(this.ac||0)+dt; const rate=did('valve')?(did('window')?0:0.5):0.07; if(rate&&this.ac>rate){ this.ac=0; spawn(-5.75+(Math.random()-0.5)*0.3,1.1,-4.75,(Math.random()-0.2)*0.35,0.12,0.25+Math.random()*0.3,0xc8e6b0,3.5,0.12,-0.02); }
+    if(did('valve')&&INTER.gasvalve.obj.userData.wheel) INTER.gasvalve.obj.userData.wheel.rotation.z+=dt*(this.spin=Math.max(0,(this.spin==null?6:this.spin)-dt*4)); },
+  urgent(){ return !did('valve'); },
+  actions:[{id:'warn',label:'📢 เตือนทุกคนให้ออกจากพื้นที่',run(){ if(mark('warnall','เตือนทุกคนให้ออกจากพื้นที่','ok','','MT 5.1.3.6')){ say(PC,'แก๊สรั่ว! ทุกคนออกไปก่อน!',2.5); PC.override='help'; PC.overT=1.1; fb('ok','📢 เตือนแล้ว','📢 คุณเตือนทุกคน'); } },disabled:()=>did('warnall')},
+    {id:'light',label:'💡 เปิดไฟ / พัดลมระบายอากาศ',run(){ crit('กดสวิตช์ไฟฟ้าในพื้นที่แก๊สรั่ว','ประกายไฟจากสวิตช์ทำให้เกิดการระเบิดได้','MT 5.1.3.5'); }},
+    {id:'mobile',label:'📱 โทรแจ้งเหตุด้วยมือถือในห้อง',run(){ crit('ใช้โทรศัพท์ในพื้นที่แก๊สรั่ว','ต้องออกไปแจ้งเหตุจากจุดปลอดภัยนอกพื้นที่','MT 5.1.3.6'); }}],
+  interact(id){
+    if(id==='gasvalve'){ if(did('valve')){ toast('ปิดวาล์วแล้ว','info'); return true; }
+      choiceModal('วาล์วแก๊สหลัก','<p>จะทำอย่างไรกับวาล์วแก๊ส?</p>',[
+        {label:'ปิดวาล์วแก๊สหลัก (หมุนตามเข็มนาฬิกา)',run:()=>{ mark('valve','ปิดวาล์วแก๊สหลัก','ok','','MT 5.1.3.5'); fb('ok','✓ ปิดวาล์วแล้ว เสียงฟู่หยุด — เปิดหน้าต่างระบายอากาศ','ปิดวาล์วแล้ว'); }},
+        {label:'ใช้ไฟแช็กหาจุดรั่ว',run:()=>crit('ใช้เปลวไฟหาจุดรั่ว','ทำให้แก๊สติดไฟและระเบิดได้','MT 5.1.3.5')},
+        {label:'เคาะท่อเพื่อหาจุดรั่ว',run:()=>{ log('เคาะท่อแก๊ส','warn','อาจเกิดประกายไฟและทำให้รอยรั่วใหญ่ขึ้น','MT 5.1.3.5'); fb('warn','อย่าเคาะท่อ — ปิดวาล์วหลักทันที','คุณเคาะท่อ'); }}]); return true; }
+    if(id==='window'){ if(mark('window','เปิดหน้าต่างระบายอากาศ','ok','','MT 5.1.2.1')){ if(windowGlass) windowGlass.visible=false; fb('ok','✓ เปิดหน้าต่างแล้ว อากาศถ่ายเท','เปิดหน้าต่างแล้ว'); } return true; }
+    if(id==='phone'){ crit('ใช้โทรศัพท์ในพื้นที่แก๊สรั่ว','ต้องออกไปแจ้งเหตุจากจุดปลอดภัยนอกพื้นที่','MT 5.1.3.6'); return true; }
+    if(id==='panel'||id==='alarm'){ crit('แตะอุปกรณ์ไฟฟ้าในพื้นที่แก๊สรั่ว','ประกายไฟอาจทำให้เกิดการระเบิด','MT 5.1.3.5'); return true; }
+    if(id==='door'){ mark('evac','ออกจากพื้นที่','ok','','MT 5.1.3.5');
+      choiceModal('อยู่นอกห้องแล้ว','<p>ทำอะไรต่อ?</p>',[
+        {label:'แจ้งเหตุจากจุดปลอดภัยไปยังหน่วยงานที่รับผิดชอบ และห้ามคนเข้าพื้นที่',run:()=>{ mark('report','แจ้งเหตุจากจุดปลอดภัยนอกพื้นที่','ok','','MT 5.1.3.6'); endG(); }},
+        {label:'กลับเข้าไปเก็บเอกสารและของมีค่า',run:()=>{ crit('กลับเข้าพื้นที่แก๊สรั่ว','เสี่ยงต่อการสูดดมและการระเบิด','MT 5.1.3.5'); endG(); }},
+        {label:'กดสวิตช์ไฟหน้าห้องเพื่อดูความเสียหาย',run:()=>{ crit('กดสวิตช์ไฟฟ้าในพื้นที่แก๊สรั่ว','ประกายไฟทำให้เกิดการระเบิดได้','MT 5.1.3.5'); endG(); }}]); return true; }
+    return false; },
+  marker(){ return !did('valve')?'gasvalve':!did('window')?'window':'door'; },
+  hint(){ return !did('warnall')?'<b>เตือนทุกคน</b> แล้วไป<b>ปิดวาล์วแก๊ส</b> (ข้างตู้ดูดควัน) — ห้ามแตะสวิตช์ไฟ':!did('valve')?'ไป<b>ปิดวาล์วแก๊สหลัก</b> ข้างตู้ดูดควัน':!did('window')?'<b>เปิดหน้าต่าง</b>ระบายอากาศ (ผนังซ้าย)':'ออกจากพื้นที่ทาง<b>ประตู</b> แล้วแจ้งเหตุจากภายนอก'; },
+  score(){ return [R('เตือนทุกคนให้ออกจากพื้นที่',did('warnall'),10,'MT 5.1.3.6'),R('ปิดวาล์วแก๊สหลัก',did('valve'),16,'MT 5.1.3.5'),R('เปิดหน้าต่างระบายอากาศ',did('window'),12,'MT 5.1.2.1'),
+    R('ไม่แตะสวิตช์/อุปกรณ์ไฟฟ้า/โทรศัพท์ในพื้นที่',!S.critical.some(c=>/สวิตช์|โทรศัพท์|ไฟฟ้า|เปลวไฟ/.test(c.action)),8,'MT 5.1.3.5'),R('อพยพออกจากพื้นที่',did('evac'),10,'MT 5.1.3.5'),R('แจ้งเหตุจากจุดปลอดภัยนอกพื้นที่',did('report'),14,'MT 5.1.3.6')]; },
+  timeScore(){ return tScore(S.done.valve,25,45); },
+  quiz:[{q:'เมื่อได้กลิ่นแก๊สรั่ว สิ่งที่ห้ามทำมากที่สุด',opts:['เปิดหรือปิดสวิตช์ไฟฟ้า','เปิดหน้าต่าง','ปิดวาล์วแก๊สหลัก']},
+        {q:'ควรแจ้งเหตุแก๊สรั่วจากที่ใด',opts:['จุดปลอดภัยนอกพื้นที่ที่มีแก๊ส','โทรศัพท์ในห้องที่แก๊สรั่ว','ไม่ต้องแจ้งถ้าปิดวาล์วได้แล้ว']}],
+  correct:['เตือนทุกคนให้ออกจากพื้นที่','ห้ามกดสวิตช์ไฟ ห้ามใช้โทรศัพท์ ห้ามจุดไฟในพื้นที่','ปิดวาล์วแก๊สหลัก แล้วเปิดหน้าต่างระบายอากาศ','อพยพออก และแจ้งเหตุจากจุดปลอดภัยนอกพื้นที่','ห้ามกลับเข้าพื้นที่จนกว่าเจ้าหน้าที่จะยืนยันว่าปลอดภัย']};
+
+/* ---------- M7 waste ---------- */
+MODS.M7={code:'M7',icon:'🗑️',title:'คัดแยกขยะในห้องปฏิบัติการ',refs:['LA MT 5.5.3.1','MT 5.5.3.2','MT 5.5.3.3','HA II-3','HA II-4'],quizRef:'MT 5.5.3.2',
+  items:[['tip','ปลายทิปปิเปตที่ปนเลือด','redbin'],['needle','เข็มเจาะเลือดที่ใช้แล้ว','sharps'],['slide','สไลด์แก้วแตก','sharps'],['chem','น้ำยาเหลือใช้ที่มีสารเคมีอันตราย','chemwaste'],['glove','ถุงมือที่ปนเปื้อนเลือด','redbin'],['paper','ถุงพลาสติกห่อของที่ไม่ปนเปื้อน','genbin']],
+  BIN:{redbin:'ถังขยะติดเชื้อ (ถุงแดง)',sharps:'ภาชนะของมีคม',chemwaste:'ภาชนะขยะสารเคมี',genbin:'ถังขยะทั่วไป'},
+  brief:'บนโต๊ะมี<b>ถาดของเสียหลังเลิกงาน 6 ชิ้น</b> หยิบทีละชิ้นจากถาด แล้วนำไปทิ้งให้ถูกถัง (ถุงแดง · ของมีคม · สารเคมี · ขยะทั่วไป)',
+  setup(){ trayG.visible=true; this.i=0; this.carry=null; this.res={}; },
+  interact(id){
+    if(id==='tray'){ if(this.carry) return toast('ทิ้ง "'+this.carry[1]+'" ก่อน','info'),true; if(this.i>=this.items.length) return toast('ถาดว่างแล้ว','info'),true;
+      this.carry=this.items[this.i++]; log('หยิบ: '+this.carry[1],'info'); toast('🧺 ถืออยู่: '+this.carry[1],'info'); if(this.i>=this.items.length) trayG.visible=false; return true; }
+    if(this.BIN[id]){ if(!this.carry){ toast(this.BIN[id]+' — หยิบของจากถาดก่อน','info'); return true; }
+      const [k,label,ok]=this.carry; this.carry=null;
+      if(id===ok){ this.res[k]=true; mark('w_'+k,`ทิ้ง ${label} → ${this.BIN[id]}`,'ok','','MT 5.5.3.2'); fb('ok','✓ ถูกต้อง: '+label+' → '+this.BIN[id],'ทิ้งแล้ว'); burst(P.x,1.6,P.z,0x9be7b4,6,0.6,0.02,1,0.5); }
+      else { this.res[k]=false; const sharp=ok==='sharps'; if(sharp&&id!=='sharps') crit(`ทิ้ง${label}ลงถุงขยะ`,'ของมีคมทะลุถุงและบาดผู้อื่นได้ ต้องทิ้งในภาชนะของมีคม','MT 5.5.3.2');
+        else { mark('w_'+k,`ทิ้ง ${label} → ${this.BIN[id]} (ผิด ควรเป็น ${this.BIN[ok]})`,'warn','','MT 5.5.3.2'); fb('warn','✗ '+label+' ควรทิ้งที่ '+this.BIN[ok],'ทิ้งแล้ว'); } S.done['w_'+k]=S.done['w_'+k]??t(); }
+      if(Object.keys(this.res).length===this.items.length) endG(); return true; }
+    return false; },
+  chip(){ return {html:this.carry?`ถืออยู่: <b>${this.carry[1]}</b>`:`ทิ้งแล้ว <b>${Object.keys(this.res||{}).length}/6</b> · คลิกถาดเพื่อหยิบชิ้นต่อไป`,red:false}; },
+  marker(){ return this.carry?null:'tray'; },
+  hint(){ return this.carry?`นำ <b>${this.carry[1]}</b> ไปทิ้งให้ถูกถัง`:'คลิก<b>ถาดของเสีย</b>บนโต๊ะเพื่อหยิบชิ้นต่อไป'; },
+  score(){ const pts=[12,12,12,12,11,11]; return this.items.map(([k,l,ok],i)=>R(`${l} → ${this.BIN[ok]}`,!!this.res[k],pts[i],'MT 5.5.3.2')); },
+  timeScore(){ const ts=this.items.map(([k])=>S.done['w_'+k]).filter(v=>v!=null); return ts.length<6?6:tScore(Math.max(...ts),80,130); },
+  quiz:[{q:'ขยะติดเชื้อต้องทิ้งในถุงสีใด',opts:['สีแดง','สีดำ','สีเขียว']},
+        {q:'ควรปิดและเปลี่ยนภาชนะของมีคมเมื่อใด',opts:['เมื่อบรรจุถึงประมาณ 3/4 ของภาชนะ','เมื่อเต็มจนล้น','ทุก 1 เดือนไม่ว่าจะเต็มหรือไม่']}],
+  correct:['ของปนเลือด/สารคัดหลั่ง (ทิป ถุงมือ) → ถุงแดง ขยะติดเชื้อ','เข็มและเศษแก้ว/สไลด์แตก → ภาชนะของมีคม (ปิดเมื่อถึง 3/4)','น้ำยา/สารเคมีอันตราย → ภาชนะรวบรวมขยะสารเคมีตามประเภท','ของที่ไม่ปนเปื้อน → ขยะทั่วไป']};
+MODS.M7.items.forEach(()=>{});
+
+/* ================= ONLINE RANKING (Supabase) ================= */
+const SB_URL='https://fdtcxwhbyjpuzwdqmtve.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkdGN4d2hieWpwdXp3ZHFtdHZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxMzQxNTYsImV4cCI6MjExMDcxMDE1Nn0.X5KCwD6tXrcrRS_s4BAFiMNINaeXrs61CBhx0wkrv_o';
+const GAME_VER='1.0';
+const MOD_INFO={M0:['🥼','แต่งกายและสวม PPE'],M1:['🔍','สำรวจอุปกรณ์ความปลอดภัย'],M2:['🩸','เลือด/สิ่งส่งตรวจหกแตก'],M3:['👁️','สารเคมีกระเด็นเข้าตา'],M4:['💉','เข็มตำ / สัมผัสเลือด'],M5:['🔥','ไฟไหม้จากเครื่องมือไฟฟ้า'],M6:['💨','แก๊สรั่ว'],M7:['🗑️','คัดแยกขยะ']};
+async function rpc(fn,args){ const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),10000);
+  try{ const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(args||{}),signal:ctl.signal});
+    const txt=await r.text(); let j=null; try{ j=txt?JSON.parse(txt):null; }catch(_){}
+    if(!r.ok) throw new Error((j&&(j.message||j.hint))||('HTTP '+r.status)); return j; }
+  finally{ clearTimeout(tm); } }
+const LS={ get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} } };
+let ME=LS.get('lsh_player');
+async function ensurePlayer(name,org,grp){
+  if(ME&&ME.id&&ME.secret){
+    if(ME.name===name&&ME.org===org&&(ME.grp||'')===(grp||'')) return ME;
+    try{ await rpc('update_player',{p_id:ME.id,p_secret:ME.secret,p_name:name,p_org:org,p_grp:grp||null}); ME=Object.assign({},ME,{name,org,grp}); LS.set('lsh_player',ME); return ME; }
+    catch(e){ if(!/unauthorized/.test(e.message)) throw e; }
+  }
+  const r=await rpc('register_player',{p_name:name,p_org:org,p_grp:grp||null}); ME={id:r.id,secret:r.secret,name,org,grp}; LS.set('lsh_player',ME); return ME;
+}
+async function submitResult(module,total,steps,timePts,quiz,dur,passed,crit){
+  const box=document.getElementById('rankBox'); if(!box) return;
+  const btn=` <button class="btn" style="margin-left:6px" id="rbBoard">🏆 ดูตารางอันดับ</button>`;
+  const bind=()=>{ const b=document.getElementById('rbBoard'); if(b) b.onclick=()=>openBoard(module); };
+  if(!S.online){ box.innerHTML='ℹ️ ผลนี้ไม่ได้ส่งเข้าตารางอันดับ (ไม่ได้กรอกมหาวิทยาลัย/หน่วยงาน หรือไม่ได้ยินยอมให้แสดงผล)'+btn; bind(); return; }
+  box.innerHTML='⏳ กำลังบันทึกผลเข้าตารางอันดับ…';
+  try{ await S.playerReady; if(!ME) throw new Error('ลงทะเบียนไม่สำเร็จ');
+    const r=await rpc('submit_attempt',{p_id:ME.id,p_secret:ME.secret,p_module:module,p_mode:S.mode,p_score:Math.round(total),p_steps:Math.round(steps),p_time:Math.round(timePts),p_quiz:Math.round(quiz),
+      p_duration:Math.max(1,Math.min(3600,Math.round(dur*10)/10)),p_passed:!!passed,p_crit:crit,p_version:GAME_VER});
+    box.innerHTML=(r&&r.ranked)?`🏆 อันดับของคุณใน ${module} (โหมดสอบ): <b style="font-size:20px">#${r.rank}</b> จาก ${r.total} คน`+btn
+      :'✓ บันทึกเป็นประวัติการฝึกแล้ว · โหมดฝึกไม่นำมาจัดอันดับ — เล่น<b>โหมดสอบ</b>เพื่อติดอันดับ'+btn; bind();
+  }catch(e){ box.innerHTML='⚠️ ส่งผลออนไลน์ไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ต ('+esc(e.message)+')'+btn; bind(); }
+}
+let boardTab='ALL';
+const fmtDur=s=>{ s=+s; const m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+(s-m*60).toFixed(1).padStart(4,'0'); };
+const medal=r=>r==1?'🥇':r==2?'🥈':r==3?'🥉':'';
+function openBoard(tab){ if(tab) boardTab=tab; $('#board').classList.add('show');
+  $('#bTabs').innerHTML=['ALL','M0','M1','M2','M3','M4','M5','M6','M7'].map(k=>`<button class="tab${k===boardTab?' on':''}" data-k="${k}">${k==='ALL'?'⭐ Hero รวม':MOD_INFO[k][0]+' '+k}</button>`).join('');
+  document.querySelectorAll('#bTabs .tab').forEach(b=>b.onclick=()=>{ boardTab=b.dataset.k; openBoard(); });
+  loadOrgs(); loadBoard(); }
+window.openBoard=openBoard;
+async function loadOrgs(){ const sel=$('#bOrg'); if(sel.dataset.loaded) return; try{ const rows=await rpc('get_orgs',{}); sel.innerHTML='<option value="">ทุกมหาวิทยาลัย / หน่วยงาน</option>'+(rows||[]).map(r=>`<option value="${esc(r.org)}">${esc(r.org)} (${r.players})</option>`).join(''); sel.dataset.loaded='1'; }catch(e){} }
+async function loadBoard(){ const body=$('#bBody'), org=$('#bOrg').value||null;
+  $('#bTitle').textContent=boardTab==='ALL'?'อันดับ Lab Safe Hero รวมทุกโมดูล':`อันดับ ${boardTab} · ${MOD_INFO[boardTab][1]}`;
+  body.innerHTML='<p style="text-align:center;color:var(--mut)">⏳ กำลังโหลด…</p>';
+  try{
+    if(boardTab==='ALL'){ const rows=await rpc('get_overall',{p_org:org,p_limit:200});
+      if(!rows||!rows.length){ body.innerHTML='<p style="text-align:center;color:var(--mut)">ยังไม่มีผลโหมดสอบ — มาเป็นคนแรกกัน!</p>'; return; }
+      body.innerHTML=`<table class="btab"><tr><th>#</th><th>ผู้เล่น</th><th>มหาวิทยาลัย/หน่วยงาน</th><th>ผ่าน</th><th>เหรียญ</th><th>คะแนนรวม</th><th>เวลารวม</th></tr>${rows.map(r=>`<tr class="${ME&&r.player_id===ME.id?'me':''}"><td class="rk">${medal(r.rank)||r.rank}</td><td><b>${esc(r.display_name)}</b>${r.grp?`<div class="sub">${esc(r.grp)}</div>`:''}</td><td>${esc(r.org)}</td><td><b>${r.modules_passed}</b>/8</td><td class="bdg">${['M0','M1','M2','M3','M4','M5','M6','M7'].map(k=>`<span class="${(r.passed_modules||[]).includes(k)?'got':''}" title="${k}">${MOD_INFO[k][0]}</span>`).join('')}</td><td>${r.total_score}</td><td>${fmtDur(r.total_time)}</td></tr>`).join('')}</table>`;
+    } else { const rows=await rpc('get_leaderboard',{p_module:boardTab,p_org:org,p_limit:200});
+      if(!rows||!rows.length){ body.innerHTML='<p style="text-align:center;color:var(--mut)">ยังไม่มีผลโหมดสอบของโมดูลนี้ — มาเป็นคนแรกกัน!</p>'; return; }
+      body.innerHTML=`<table class="btab"><tr><th>#</th><th>ผู้เล่น</th><th>มหาวิทยาลัย/หน่วยงาน</th><th>คะแนน</th><th>เวลา</th><th>ผล</th><th>ครั้ง</th><th>วันที่</th></tr>${rows.map(r=>`<tr class="${ME&&r.player_id===ME.id?'me':''}"><td class="rk">${medal(r.rank)||r.rank}</td><td><b>${esc(r.display_name)}</b>${r.grp?`<div class="sub">${esc(r.grp)}</div>`:''}</td><td>${esc(r.org)}</td><td><b>${r.score}</b></td><td>${fmtDur(r.duration_sec)}</td><td>${r.passed?'<span class="t-ok">✓ ผ่าน</span>':'<span class="t-crit">✗</span>'}</td><td>${r.attempts}</td><td>${new Date(r.best_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'})}</td></tr>`).join('')}</table>`; }
+  }catch(e){ body.innerHTML=`<p style="text-align:center">⚠️ โหลดตารางอันดับไม่สำเร็จ<br><span style="color:var(--mut);font-size:13px">ตารางอันดับออนไลน์ใช้ได้เมื่อเปิดเกมจากเว็บไซต์ของเกม และต้องเชื่อมต่ออินเทอร์เน็ต (${esc(e.message)})</span></p>`; }
+}
+$('#bClose').onclick=()=>$('#board').classList.remove('show');
+$('#bRefresh').onclick=()=>loadBoard();
+$('#bOrg').onchange=()=>loadBoard();
+$('#introBoard').onclick=()=>openBoard('ALL');
+if(ME){ if(ME.name) $('#nameInp').value=ME.name; if(ME.org) $('#orgInp').value=ME.org; if(ME.grp) $('#grpInp').value=ME.grp; }
+
+
+/* ================= INTRO ================= */
+document.querySelectorAll('.mod').forEach(o=>o.onclick=()=>{ document.querySelectorAll('.mod').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); S.mod=o.dataset.mod; });
+document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{ document.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); S.mode=o.dataset.mode; });
+function controlsHelp(){ modal('วิธีควบคุม',`<div class="ctrls" style="margin:0"><b>ลากเมาส์ / นิ้ว</b><span>หมุนมุมกล้อง</span><b>ล้อเมาส์ / จีบนิ้ว</b><span>ซูมเข้า-ออก</span><b>คลิกที่พื้น</b><span>เดินไปยังจุดนั้น</span><b>คลิกอุปกรณ์</b><span>เดินไปและใช้งาน</span><b>W A S D</b><span>เดิน · ลูกศรซ้าย/ขวา หมุนตัว</span><b>Space ค้าง</b><span>ล้างตา (เมื่ออยู่ที่จุดล้างตา)</span></div>`,[{label:'เข้าใจแล้ว',cls:'pri'}]); }
+$('#helpBtn').onclick=()=>{ if(S.phase==='pre'||S.phase==='emergency') controlsHelp(); };
+$('#startBtn').onclick=()=>{
+  S.name=$('#nameInp').value.trim(); const org=$('#orgInp').value.trim(), grp=$('#grpInp').value.trim(), consent=$('#consentInp').checked;
+  if(consent&&(!S.name||!org)){ toast('กรอกชื่อและมหาวิทยาลัย/หน่วยงาน เพื่อเข้าร่วมตารางอันดับ (หรือยกเลิกการยินยอมเพื่อเล่นอย่างเดียว)','warn',4500); (S.name?$('#orgInp'):$('#nameInp')).focus(); return; }
+  S.online=consent&&!!S.name&&!!org; S.playerReady=S.online?ensurePlayer(S.name.slice(0,40),org.slice(0,80),grp.slice(0,60)).catch(e=>{ ME=ME&&ME.id?ME:null; S.onlineErr=e.message; return null; }):Promise.resolve(null);
+  initAudio();
+  $('#intro').style.display='none'; $('#hud').classList.add('show');
+  $('#modeBadge').textContent=S.mode==='exam'?'📝 โหมดสอบ · นับอันดับ':'🎓 โหมดฝึก';
+  S.phase='pre'; S.ui=false; setSprite(PC.tag,S.name?S.name.slice(0,18):'คุณ');
+  if(S.mod!=='M3'){ G=MODS[S.mod]; G.setup&&G.setup(); $('.sc-title').textContent=G.code+' · '+G.title; briefG(); }
+  toast('ลากเพื่อมองรอบ ๆ · คลิกที่พื้นเพื่อเดิน · คลิกอุปกรณ์เพื่อใช้งาน','info',5000);
+};
+
+/* ================= BOOT ================= */
+const fontReady=(document.fonts&&document.fonts.load)?Promise.race([Promise.all([document.fonts.load(`800 40px Sarabun`),document.fonts.load(`500 40px Mitr`)]),new Promise(r=>setTimeout(r,2500))]):Promise.resolve();
+fontReady.catch(()=>{}).then(()=>{ buildWorld(); buildExtras(); buildGrid();
+  PC=makeChar({skin:0xf2c9a8,hair:0x6b4430,ponytail:true,coat:0xfffaf3,shirt:0x8fc1e3,pants:0x4a5d8a,shoe:0xf5ede2,glove:0x9b8fe6,badge:0x6fb3a3,glasses:'up',tag:'คุณ'}); marker=makeMarker();
+  NPC.C=makeChar({skin:0xdcaa86,hair:0x2b2220,ponytail:false,coat:0xfffaf3,shirt:0x5aa89a,pants:0x3f7f73,shoe:0x6b5446,glove:0x9b8fe6,badge:0xf2c94c,glasses:'on',tag:'พี่หัวหน้า Lab'}); NPC.C.root.visible=false;
+  loop(); });
+})();
+</script>
+</body>
+</html>
