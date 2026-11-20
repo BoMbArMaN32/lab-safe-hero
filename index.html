@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lab Safe Hero — เกมจำลองรับมือเหตุฉุกเฉินในห้องปฏิบัติการ 3 มิติ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -56,7 +56,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#a9cf8a;font-family:'M
 .hold.active{background:#9fd6ee;transform:translateY(3px);box-shadow:0 1px 0 #4f97b8}
 .fp-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .fp-row .btn{flex:1 1 150px;font-size:14px}
-#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(60,35,15,.35);z-index:30;padding:16px}
+#modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(60,35,15,.35);z-index:80;padding:16px}
 #modal.show{display:flex}
 .m-card{padding:20px;width:min(560px,100%);max-height:90vh;overflow:auto}
 .m-card h3{margin:0 0 10px;font-size:20px;font-weight:600;color:#6b3f22}
@@ -69,7 +69,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#a9cf8a;font-family:'M
 .form .cb input{width:18px;height:18px;accent-color:var(--pri2)}
 .sds{background:#fffbea;color:#3a2f00;border:2px dashed #e0b84a;border-radius:12px;padding:12px;margin-top:10px;font-size:14px}
 #intro{position:fixed;inset:0;z-index:40;display:flex;padding:16px;background:rgba(70,50,30,.25);overflow-y:auto}
-.intro-card{width:min(700px,100%);padding:22px 24px;margin:auto;flex-shrink:0}
+
 .intro-card h1{margin:4px 0 6px;font-size:28px;line-height:1.3;font-weight:600;color:#6b3f22}
 .intro-card p{line-height:1.65;margin:8px 0}
 .kicker{color:#b5562a;font-weight:600;font-size:13px;letter-spacing:.5px}
@@ -120,6 +120,63 @@ th{color:var(--mut);font-weight:500}
 .res-btns{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 6px}
 textarea#json{width:100%;height:180px;background:#2b2118;color:#f6e7cf;border:2px solid var(--line);border-radius:12px;font:12px/1.4 ui-monospace,monospace;padding:10px;display:none}
 #loaderr{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:99;background:#fff6e6;padding:20px;text-align:center}
+
+/* ---- responsive start screen ---- */
+.intro-card{width:min(1180px,100%);padding:clamp(14px,2.4vh,26px) clamp(16px,2.2vw,30px);margin:auto;flex-shrink:0;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(16px,2.2vw,32px)}
+.in-left,.in-right{min-width:0;display:flex;flex-direction:column}
+.in-right{border-left:2px dashed #ead2b4;padding-left:clamp(16px,2.2vw,32px)}
+.intro-card h1{font-size:clamp(26px,4.2vh,34px);margin:2px 0}
+.in-sub{font-size:clamp(13px,1.9vh,16px);color:#8a5a34}
+.in-label{font-weight:600;font-size:14px;margin:clamp(10px,1.8vh,16px) 0 6px;color:#6b3f22}
+.intro-card .mods{margin:0}
+.intro-card .mod{padding:clamp(6px,1.1vh,10px) 6px}
+.mod-detail{margin-top:10px;background:var(--panel2);border:2px solid #ead2b4;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;flex:1;min-height:96px}
+.mod-detail h3{margin:0 0 4px;font-size:16px;font-weight:600;color:#6b3f22}
+.mod-detail .refs{margin:6px 0 0}
+.fl{display:block;font-weight:500;font-size:13.5px;margin-bottom:8px}
+.intro-card .inp{padding:clamp(7px,1.25vh,10px) 12px;margin-top:4px}
+.intro-card .grid2{margin:0;gap:10px}
+.intro-card .opt{padding:clamp(8px,1.4vh,12px)}
+.in-actions{margin-top:auto;padding-top:14px;display:flex;flex-direction:column;gap:8px}
+#startBtn{font-size:18px;padding:clamp(11px,1.9vh,15px)}
+.in-row{display:flex;gap:8px}.in-row .btn{flex:1}
+@media (min-width:1024px) and (max-height:740px){.intro-card .mod span:last-child{font-size:11px}.mod-detail{min-height:70px;font-size:13px}.in-label{margin-top:8px}}
+@media (max-width:1023px){
+  #intro{padding:10px}
+  .intro-card{grid-template-columns:1fr;padding:16px;gap:4px}
+  .in-right{border-left:0;padding-left:0;border-top:2px dashed #ead2b4;padding-top:4px;margin-top:8px}
+  .mod-detail{min-height:0}
+  .in-actions{position:sticky;bottom:-16px;background:var(--panel);margin:10px -16px -16px;padding:10px 16px calc(14px + env(safe-area-inset-bottom));border-top:2px solid #ead2b4;border-radius:0 0 16px 16px;z-index:2}
+}
+@media (max-width:620px){
+  .intro-card .mods{grid-template-columns:repeat(4,1fr);gap:6px}
+  .intro-card .mod span:last-child{display:none}
+  .intro-card .mod .mi{font-size:20px}
+  .intro-card .grid2.two{grid-template-columns:1fr}
+  .intro-card .grid2.modes{grid-template-columns:1fr 1fr}
+  .intro-card .opt span{font-size:12px}
+  .intro-card h1{font-size:26px}
+  .mod-detail{font-size:13px;padding:10px 12px}
+}
+/* ---- in-game on phones and tablets ---- */
+@media (max-width:820px){
+  .btn{min-height:44px}
+  #hud{top:calc(8px + env(safe-area-inset-top));left:8px;right:8px}
+  .hud-l{padding:6px 12px}.timer{font-size:22px}
+  .sc-title{font-size:11px;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hud-r .chip{padding:6px 10px;font-size:12px}
+  #actions{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;max-width:calc(100vw - 16px);bottom:calc(8px + env(safe-area-inset-bottom));padding:7px;-webkit-overflow-scrolling:touch}
+  #actions .btn{flex:0 0 auto;white-space:nowrap}
+  #toasts{top:76px}.toast{font-size:14px;padding:8px 12px}
+  #hint{font-size:13px;padding:6px 12px;max-width:94vw}
+  #flushPanel{padding:12px;bottom:calc(8px + env(safe-area-inset-bottom))}.hold{padding:12px;font-size:17px}.fp-row .btn{flex:1 1 45%}
+  .m-card{padding:16px}#mBtns .btn{min-height:46px}
+  #results{padding:8px}.res{padding:14px}.big{font-size:42px}.sec{overflow-x:auto}
+  #board{padding:8px}.board-card{padding:12px}.btab{font-size:13px}.btab td,.btab th{padding:6px}
+  .btab .sub{display:none}
+  .btab:not(.ov) th:nth-child(n+7),.btab:not(.ov) td:nth-child(n+7){display:none}
+  .btab.ov th:nth-child(5),.btab.ov td:nth-child(5){display:none}
+}
 @media (max-width:620px){.grid2{grid-template-columns:1fr}.barrow{grid-template-columns:1fr 60px}.barrow .bar{grid-column:1/3;grid-row:2}.timer{font-size:24px}#hint{font-size:14px}.btn{font-size:14px;padding:8px 11px}}
 </style>
 </head>
@@ -165,32 +222,32 @@ textarea#json{width:100%;height:180px;background:#2b2118;color:#f6e7cf;border:2p
 
 <div id="intro">
   <div class="intro-card wood">
-    <div class="kicker">LAB SAFE HERO · 3D LABORATORY EMERGENCY RESPONSE SIMULATION GAME</div>
-    <h1>Lab Safe Hero</h1>
-    <div style="font-size:17px;color:#8a5a34;margin-top:-2px">เกมจำลองรับมือเหตุฉุกเฉินในห้องปฏิบัติการ 3 มิติ</div>
-    <p>คุณคือเจ้าหน้าที่ห้องปฏิบัติการ เลือกสถานการณ์แล้วลงมือรับมือให้ถูกขั้นตอนภายในเวลาที่จำกัด ระบบบันทึกทุกการกระทำพร้อมเวลาและประเมินผลตามมาตรฐาน LA และ HA · ถ้าขอความช่วยเหลือ พี่หัวหน้า Lab จะมาช่วย · ในโหมดฝึกมีหมุด <b>!</b> สีเหลืองชี้จุดที่ควรไป</p>
-    <div style="font-weight:600;font-size:14px;margin-top:10px">เลือกสถานการณ์</div>
-    <div class="mods"><div class="mod" data-mod="M0"><span class="mi">🥼</span><b>M0</b><span>แต่งกายและสวม PPE</span></div><div class="mod" data-mod="M1"><span class="mi">🔍</span><b>M1</b><span>สำรวจอุปกรณ์ความปลอดภัย</span></div><div class="mod" data-mod="M2"><span class="mi">🩸</span><b>M2</b><span>เลือด/สิ่งส่งตรวจหกแตก</span></div><div class="mod sel" data-mod="M3"><span class="mi">👁️</span><b>M3</b><span>สารเคมีกระเด็นเข้าตา</span></div><div class="mod" data-mod="M4"><span class="mi">💉</span><b>M4</b><span>เข็มตำ / สัมผัสเลือด</span></div><div class="mod" data-mod="M5"><span class="mi">🔥</span><b>M5</b><span>ไฟไหม้จากเครื่องมือไฟฟ้า</span></div><div class="mod" data-mod="M6"><span class="mi">💨</span><b>M6</b><span>แก๊สรั่ว</span></div><div class="mod" data-mod="M7"><span class="mi">🗑️</span><b>M7</b><span>คัดแยกขยะ</span></div></div>
-    <label style="font-weight:700;font-size:14px;display:block;margin-top:14px">ชื่อผู้ฝึก
-      <input class="inp" id="nameInp" placeholder="ชื่อที่จะแสดงในตารางอันดับ (ใช้ชื่อเล่นได้)" maxlength="40">
-    </label>
-    <div class="grid2" style="margin:8px 0 0">
-      <label style="font-weight:600;font-size:14px">มหาวิทยาลัย / หน่วยงาน<input class="inp" id="orgInp" placeholder="เช่น ม.นเรศวร, รพ.หนองหาน" maxlength="80"></label>
-      <label style="font-weight:600;font-size:14px">คณะ / ชั้นปี (ไม่บังคับ)<input class="inp" id="grpInp" placeholder="เช่น เทคนิคการแพทย์ ปี 4" maxlength="60"></label>
+    <div class="in-left">
+      <div class="kicker">LAB SAFE HERO · 3D LABORATORY EMERGENCY RESPONSE SIMULATION GAME</div>
+      <h1>Lab Safe Hero</h1>
+      <div class="in-sub">เกมจำลองรับมือเหตุฉุกเฉินในห้องปฏิบัติการ 3 มิติ · ประเมินผลตามมาตรฐาน LA และ HA</div>
+      <div class="in-label">1 · เลือกสถานการณ์</div>
+      <div class="mods"><div class="mod" data-mod="M0"><span class="mi">🥼</span><b>M0</b><span>แต่งกายและสวม PPE</span></div><div class="mod" data-mod="M1"><span class="mi">🔍</span><b>M1</b><span>สำรวจอุปกรณ์ความปลอดภัย</span></div><div class="mod" data-mod="M2"><span class="mi">🩸</span><b>M2</b><span>เลือด/สิ่งส่งตรวจหกแตก</span></div><div class="mod sel" data-mod="M3"><span class="mi">👁️</span><b>M3</b><span>สารเคมีกระเด็นเข้าตา</span></div><div class="mod" data-mod="M4"><span class="mi">💉</span><b>M4</b><span>เข็มตำ / สัมผัสเลือด</span></div><div class="mod" data-mod="M5"><span class="mi">🔥</span><b>M5</b><span>ไฟไหม้จากเครื่องมือไฟฟ้า</span></div><div class="mod" data-mod="M6"><span class="mi">💨</span><b>M6</b><span>แก๊สรั่ว</span></div><div class="mod" data-mod="M7"><span class="mi">🗑️</span><b>M7</b><span>คัดแยกขยะ</span></div></div>
+      <div class="mod-detail" id="modDetail"></div>
     </div>
-    <label class="consent"><input type="checkbox" id="consentInp" checked> ยินยอมให้แสดงชื่อ หน่วยงาน คะแนน และเวลาในตารางอันดับสาธารณะ (โหมดสอบเท่านั้นที่นำมาจัดอันดับ)</label>
-    <div class="grid2">
-      <div class="opt sel" data-mode="practice"><b>🎓 โหมดฝึก</b><span>มีคำใบ้และบอกทันทีว่าทำถูกหรือผิด</span></div>
-      <div class="opt" data-mode="exam"><b>📝 โหมดสอบ 🏆</b><span>ไม่มีคำใบ้ เฉลยตอนจบ และนำผลเข้าตารางอันดับ</span></div>
+    <div class="in-right">
+      <div class="in-label">2 · ข้อมูลผู้ฝึก</div>
+      <label class="fl">ชื่อผู้ฝึก<input class="inp" id="nameInp" placeholder="ชื่อที่จะแสดงในตารางอันดับ (ใช้ชื่อเล่นได้)" maxlength="40"></label>
+      <div class="grid2 two">
+        <label class="fl">มหาวิทยาลัย / หน่วยงาน<input class="inp" id="orgInp" placeholder="เช่น ม.นเรศวร, รพ.หนองหาน" maxlength="80"></label>
+        <label class="fl">คณะ / ชั้นปี (ไม่บังคับ)<input class="inp" id="grpInp" placeholder="เช่น เทคนิคการแพทย์ ปี 4" maxlength="60"></label>
+      </div>
+      <label class="consent"><input type="checkbox" id="consentInp" checked> ยินยอมให้แสดงชื่อ หน่วยงาน คะแนน และเวลาในตารางอันดับสาธารณะ (เฉพาะโหมดสอบ)</label>
+      <div class="in-label">3 · เลือกโหมด</div>
+      <div class="grid2 modes">
+        <div class="opt sel" data-mode="practice"><b>🎓 โหมดฝึก</b><span>มีคำใบ้และบอกถูก/ผิดทันที</span></div>
+        <div class="opt" data-mode="exam"><b>📝 โหมดสอบ 🏆</b><span>ไม่มีคำใบ้ · นับเข้าตารางอันดับ</span></div>
+      </div>
+      <div class="in-actions">
+        <button class="btn pri" id="startBtn">▶ เข้าสู่ห้องปฏิบัติการ</button>
+        <div class="in-row"><button class="btn" id="introBoard">🏆 ตารางอันดับ</button><button class="btn" id="howBtn">❓ วิธีเล่น</button></div>
+      </div>
     </div>
-    <div class="ctrls">
-      <b>ลากเมาส์ / ลากนิ้ว</b><span>หมุนมุมกล้อง · ล้อเมาส์หรือจีบนิ้ว = ซูม</span>
-      <b>คลิกที่พื้น</b><span>เดินไปยังจุดนั้น</span>
-      <b>คลิกที่อุปกรณ์</b><span>เดินไปและใช้งานอุปกรณ์</span>
-      <b>W A S D / ลูกศร</b><span>เดิน (คอมพิวเตอร์)</span>
-    </div>
-    <div style="display:flex;gap:10px"><button class="btn pri" id="startBtn" style="flex:1;font-size:18px;padding:14px">เข้าสู่ห้องปฏิบัติการ</button><button class="btn" id="introBoard" style="font-size:16px;padding:14px 18px">🏆 ตารางอันดับ</button></div>
-    <p style="font-size:12.5px;color:var(--mut);margin-top:12px">ทุกครั้งที่เริ่มใหม่ ระบบจะสุ่มชนิดสาร ตำแหน่งที่ล้างตา และเงื่อนไขของผู้ฝึก · ขั้นตอนในต้นแบบนี้เป็นแนวทางทั่วไป ก่อนใช้จริงต้องให้ผู้จัดการความปลอดภัยของหน่วยงานรับรองให้ตรงกับคู่มือความปลอดภัย</p>
   </div>
 </div>
 
@@ -1000,6 +1057,7 @@ function finish(){
 
 /* ================= HUD / HINTS ================= */
 function hintText(){
+  if(S.phase==='intro'||S.phase==='done') return '';
   if(S.mod!=='M3'){ if(S.phase!=='emergency') return ''; return exam()?'จัดการสถานการณ์ให้ถูกต้องตามขั้นตอน':(G&&G.hint?G.hint():''); }
   if(S.phase==='pre') return 'สำรวจห้องได้ตามต้องการ แล้วคลิก<b>ขวดสารเคมีสีน้ำตาล</b>บนโต๊ะเพื่อเริ่มงาน';
   if(exam()) return S.phase==='flushing'?'':'จัดการสถานการณ์ให้ถูกต้องตามขั้นตอน';
@@ -1487,7 +1545,7 @@ async function loadBoard(){ const body=$('#bBody'), org=$('#bOrg').value||null;
   try{
     if(boardTab==='ALL'){ const rows=await rpc('get_overall',{p_org:org,p_limit:200});
       if(!rows||!rows.length){ body.innerHTML='<p style="text-align:center;color:var(--mut)">ยังไม่มีผลโหมดสอบ — มาเป็นคนแรกกัน!</p>'; return; }
-      body.innerHTML=`<table class="btab"><tr><th>#</th><th>ผู้เล่น</th><th>มหาวิทยาลัย/หน่วยงาน</th><th>ผ่าน</th><th>เหรียญ</th><th>คะแนนรวม</th><th>เวลารวม</th></tr>${rows.map(r=>`<tr class="${ME&&r.player_id===ME.id?'me':''}"><td class="rk">${medal(r.rank)||r.rank}</td><td><b>${esc(r.display_name)}</b>${r.grp?`<div class="sub">${esc(r.grp)}</div>`:''}</td><td>${esc(r.org)}</td><td><b>${r.modules_passed}</b>/8</td><td class="bdg">${['M0','M1','M2','M3','M4','M5','M6','M7'].map(k=>`<span class="${(r.passed_modules||[]).includes(k)?'got':''}" title="${k}">${MOD_INFO[k][0]}</span>`).join('')}</td><td>${r.total_score}</td><td>${fmtDur(r.total_time)}</td></tr>`).join('')}</table>`;
+      body.innerHTML=`<table class="btab ov"><tr><th>#</th><th>ผู้เล่น</th><th>มหาวิทยาลัย/หน่วยงาน</th><th>ผ่าน</th><th>เหรียญ</th><th>คะแนนรวม</th><th>เวลารวม</th></tr>${rows.map(r=>`<tr class="${ME&&r.player_id===ME.id?'me':''}"><td class="rk">${medal(r.rank)||r.rank}</td><td><b>${esc(r.display_name)}</b>${r.grp?`<div class="sub">${esc(r.grp)}</div>`:''}</td><td>${esc(r.org)}</td><td><b>${r.modules_passed}</b>/8</td><td class="bdg">${['M0','M1','M2','M3','M4','M5','M6','M7'].map(k=>`<span class="${(r.passed_modules||[]).includes(k)?'got':''}" title="${k}">${MOD_INFO[k][0]}</span>`).join('')}</td><td>${r.total_score}</td><td>${fmtDur(r.total_time)}</td></tr>`).join('')}</table>`;
     } else { const rows=await rpc('get_leaderboard',{p_module:boardTab,p_org:org,p_limit:200});
       if(!rows||!rows.length){ body.innerHTML='<p style="text-align:center;color:var(--mut)">ยังไม่มีผลโหมดสอบของโมดูลนี้ — มาเป็นคนแรกกัน!</p>'; return; }
       body.innerHTML=`<table class="btab"><tr><th>#</th><th>ผู้เล่น</th><th>มหาวิทยาลัย/หน่วยงาน</th><th>คะแนน</th><th>เวลา</th><th>ผล</th><th>ครั้ง</th><th>วันที่</th></tr>${rows.map(r=>`<tr class="${ME&&r.player_id===ME.id?'me':''}"><td class="rk">${medal(r.rank)||r.rank}</td><td><b>${esc(r.display_name)}</b>${r.grp?`<div class="sub">${esc(r.grp)}</div>`:''}</td><td>${esc(r.org)}</td><td><b>${r.score}</b></td><td>${fmtDur(r.duration_sec)}</td><td>${r.passed?'<span class="t-ok">✓ ผ่าน</span>':'<span class="t-crit">✗</span>'}</td><td>${r.attempts}</td><td>${new Date(r.best_at).toLocaleDateString('th-TH',{day:'numeric',month:'short'})}</td></tr>`).join('')}</table>`; }
@@ -1501,7 +1559,17 @@ if(ME){ if(ME.name) $('#nameInp').value=ME.name; if(ME.org) $('#orgInp').value=M
 
 
 /* ================= INTRO ================= */
-document.querySelectorAll('.mod').forEach(o=>o.onclick=()=>{ document.querySelectorAll('.mod').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); S.mod=o.dataset.mod; });
+const MOD_DESC={M0:'แต่งกายและเลือก PPE ให้เหมาะกับงานเทกรดเข้มข้นและจับตัวอย่างเลือด ก่อนเริ่มปฏิบัติงาน',M1:'ค้นหาอุปกรณ์ความปลอดภัยในห้องให้ครบ 10 จุดภายใน 120 วินาที ระวังของที่ไม่ใช่อุปกรณ์ฉุกเฉิน',
+  M2:'หลอดเลือดตกแตกบนพื้น เตือนคนรอบข้าง ใช้ชุดจัดการเชื้อหก และทำความสะอาดตามลำดับ 7 ขั้น',M3:'สารเคมีกระเด็นเข้าตา ต้องไปถึงที่ล้างตาภายใน 10 วินาที และล้างต่อเนื่อง 15 นาที',
+  M4:'เข็มตำนิ้วหลังเจาะเลือด ล้างแผล แจ้งหัวหน้า ระบุผู้ป่วยต้นทาง และไปพบแพทย์เพื่อประเมิน PEP',M5:'เครื่องปั่นเหวี่ยงไฟลุก ใช้หลัก RACE และ PASS ให้ทันก่อนไฟลุกลามใน 50 วินาที',
+  M6:'ได้กลิ่นแก๊สรั่ว ปิดวาล์ว ระบายอากาศ และอพยพ โดยไม่ทำให้เกิดประกายไฟ',M7:'คัดแยกของเสีย 6 ชิ้นลงถังให้ถูกประเภท: ถุงแดง ของมีคม สารเคมี และขยะทั่วไป'};
+function showModDetail(){ const k=S.mod, refs=(MODS[k]&&MODS[k].refs)||['LA MT 5.1.3.2','MT 5.1.3.6','MT 5.1.3.7','MT 5.1.3.8','HA II-3'];
+  $('#modDetail').innerHTML=`<h3>${MOD_INFO[k][0]} ${k} · ${MOD_INFO[k][1]}</h3><div>${MOD_DESC[k]}</div><div class="refs">${refs.map(r=>`<span class="chip">${r}</span>`).join('')}</div>`; }
+document.querySelectorAll('.mod').forEach(o=>o.onclick=()=>{ document.querySelectorAll('.mod').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); S.mod=o.dataset.mod; showModDetail(); });
+showModDetail();
+$('#howBtn').onclick=()=>modal('วิธีเล่น Lab Safe Hero',`<div class="ctrls" style="margin:0 0 10px"><b>ลากเมาส์ / ลากนิ้ว</b><span>หมุนมุมกล้อง</span><b>ล้อเมาส์ / จีบนิ้ว</b><span>ซูมเข้า-ออก</span><b>คลิก/แตะที่พื้น</b><span>เดินไปยังจุดนั้น</span><b>คลิก/แตะอุปกรณ์</b><span>เดินไปและใช้งานอุปกรณ์</span><b>W A S D / ลูกศร</b><span>เดิน (คอมพิวเตอร์)</span></div>
+  <p style="margin:6px 0">• ขอความช่วยเหลือ แล้วพี่หัวหน้า Lab จะมาช่วย · ในโหมดฝึกมีหมุด <b>!</b> สีเหลืองชี้จุดที่ควรไป</p><p style="margin:6px 0">• คะแนนเต็ม 100: ขั้นตอนและลำดับ 70 · เวลา 20 · คำถามท้ายเกม 10 · ผ่านเมื่อได้ ≥ 80 และไม่มีข้อผิดพลาดร้ายแรง</p>
+  <p style="margin:6px 0">• บนมือถือ แนะนำให้หมุนจอเป็นแนวนอนเพื่อมองห้องได้กว้างขึ้น</p><p style="font-size:12.5px;color:var(--mut);margin:10px 0 0">ทุกครั้งที่เริ่มใหม่ ระบบจะสุ่มเงื่อนไขบางอย่าง · ขั้นตอนในเกมเป็นแนวทางทั่วไป ก่อนใช้จริงควรให้ผู้จัดการความปลอดภัยของหน่วยงานรับรองให้ตรงกับคู่มือความปลอดภัย</p>`,[{label:'เข้าใจแล้ว',cls:'pri'}]);
 document.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{ document.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); S.mode=o.dataset.mode; });
 function controlsHelp(){ modal('วิธีควบคุม',`<div class="ctrls" style="margin:0"><b>ลากเมาส์ / นิ้ว</b><span>หมุนมุมกล้อง</span><b>ล้อเมาส์ / จีบนิ้ว</b><span>ซูมเข้า-ออก</span><b>คลิกที่พื้น</b><span>เดินไปยังจุดนั้น</span><b>คลิกอุปกรณ์</b><span>เดินไปและใช้งาน</span><b>W A S D</b><span>เดิน · ลูกศรซ้าย/ขวา หมุนตัว</span><b>Space ค้าง</b><span>ล้างตา (เมื่ออยู่ที่จุดล้างตา)</span></div>`,[{label:'เข้าใจแล้ว',cls:'pri'}]); }
 $('#helpBtn').onclick=()=>{ if(S.phase==='pre'||S.phase==='emergency') controlsHelp(); };
@@ -1509,7 +1577,7 @@ $('#startBtn').onclick=()=>{
   S.name=$('#nameInp').value.trim(); const org=$('#orgInp').value.trim(), grp=$('#grpInp').value.trim(), consent=$('#consentInp').checked;
   if(consent&&(!S.name||!org)){ toast('กรอกชื่อและมหาวิทยาลัย/หน่วยงาน เพื่อเข้าร่วมตารางอันดับ (หรือยกเลิกการยินยอมเพื่อเล่นอย่างเดียว)','warn',4500); (S.name?$('#orgInp'):$('#nameInp')).focus(); return; }
   S.online=consent&&!!S.name&&!!org; S.playerReady=S.online?ensurePlayer(S.name.slice(0,40),org.slice(0,80),grp.slice(0,60)).catch(e=>{ ME=ME&&ME.id?ME:null; S.onlineErr=e.message; return null; }):Promise.resolve(null);
-  initAudio();
+  initAudio(); if(matchMedia('(orientation: portrait) and (max-width: 820px)').matches) setTimeout(()=>toast('📱 หมุนจอเป็นแนวนอนเพื่อมองห้อง Lab ได้กว้างขึ้น','info',4500),1200);
   $('#intro').style.display='none'; $('#hud').classList.add('show');
   $('#modeBadge').textContent=S.mode==='exam'?'📝 โหมดสอบ · นับอันดับ':'🎓 โหมดฝึก';
   S.phase='pre'; S.ui=false; setSprite(PC.tag,S.name?S.name.slice(0,18):'คุณ');
